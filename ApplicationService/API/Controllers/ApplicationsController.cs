@@ -1,0 +1,3 @@
+using Microsoft.AspNetCore.Authorization;using Microsoft.AspNetCore.Mvc;using StudentCenter.ApplicationService.Application.DTOs;
+namespace StudentCenter.ApplicationService.API.Controllers;
+[ApiController][Route("api/applications")][Authorize(Roles="STUDENT")]public sealed class ApplicationsController(Application.Services.ApplicationService service):ControllerBase{[HttpPost]public Task<ApplicationResponse>Create(CreateApplicationRequest r,CancellationToken ct)=>service.CreateAsync(r,ct);[HttpPost("{id:guid}/submit")]public Task<ApplicationResponse>Submit(Guid id,CancellationToken ct)=>service.SubmitAsync(id,ct);}

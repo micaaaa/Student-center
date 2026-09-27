@@ -1,0 +1,3 @@
+using System.Net.Http.Json;using StudentCenter.ApplicationService.Application.Interfaces;
+namespace StudentCenter.ApplicationService.Infrastructure.ExternalServices;
+public sealed class StudentClient(HttpClient client,IHttpContextAccessor context):IStudentClient { public async Task<Guid> GetCurrentStudentIdAsync(CancellationToken ct=default){var token=context.HttpContext?.Request.Headers.Authorization.ToString();if(!string.IsNullOrWhiteSpace(token))client.DefaultRequestHeaders.Authorization=System.Net.Http.Headers.AuthenticationHeaderValue.Parse(token);var r=await client.GetFromJsonAsync<StudentProfile>("api/students/me",ct);return r?.Id??throw new InvalidOperationException("Student profile was not found.");}private sealed record StudentProfile(Guid Id);}
