@@ -24,6 +24,12 @@ public sealed class StudentProfileService(IStudentRepository studentRepository) 
     public async Task<StudentResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         ToResponse(await studentRepository.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException("Student was not found."));
 
+    public async Task<StudentSummaryResponse> GetSummaryAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var student = await studentRepository.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException("Student was not found.");
+        return new StudentSummaryResponse(student.Id, student.UserId, student.StudentNumber, student.FirstName, student.LastName, student.Email, student.Status.ToString().ToUpperInvariant());
+    }
+
     public async Task<StudentResponse> UpdateMyProfileAsync(Guid userId, UpdateStudentProfileRequest request, CancellationToken cancellationToken = default)
     {
         FundingType? fundingType = null;

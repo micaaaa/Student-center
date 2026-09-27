@@ -32,6 +32,14 @@ public sealed class StudentsController(IStudentService studentService) : Control
     public async Task<ActionResult<StudentResponse>> GetById(Guid id, CancellationToken cancellationToken) =>
         await ExecuteAsync(() => studentService.GetByIdAsync(id, cancellationToken));
 
+    [HttpGet("{id:guid}/summary")]
+    [Authorize(Roles = "STAFF,ADMIN")]
+    public async Task<ActionResult<StudentSummaryResponse>> GetSummary(Guid id, CancellationToken cancellationToken)
+    {
+        try { return Ok(await studentService.GetSummaryAsync(id, cancellationToken)); }
+        catch (NotFoundException exception) { return NotFound(new { message = exception.Message }); }
+    }
+
     private Guid GetCurrentUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     private async Task<ActionResult<StudentResponse>> ExecuteAsync(Func<Task<StudentResponse>> action, int successStatus = StatusCodes.Status200OK)
