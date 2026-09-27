@@ -1,0 +1,30 @@
+using Microsoft.EntityFrameworkCore;
+using StudentCenter.IdentityService.Application.Interfaces;
+using StudentCenter.IdentityService.Domain.Entities;
+using StudentCenter.IdentityService.Infrastructure.Persistence;
+
+namespace StudentCenter.IdentityService.Infrastructure.Repositories;
+
+public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepository
+{
+    public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+        dbContext.Users.Include(user => user.Permissions).SingleOrDefaultAsync(user => user.Id == id, cancellationToken);
+
+    public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default) =>
+        dbContext.Users.Include(user => user.Permissions).SingleOrDefaultAsync(user => user.Email == email, cancellationToken);
+
+    public Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default) =>
+        dbContext.Users.Include(user => user.Permissions).SingleOrDefaultAsync(user => user.Username == username, cancellationToken);
+
+    public async Task<IReadOnlyCollection<User>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        await dbContext.Users.Include(user => user.Permissions).OrderBy(user => user.Username).ToListAsync(cancellationToken);
+
+    public async Task AddAsync(User user, CancellationToken cancellationToken = default)
+    {
+        await dbContext.Users.AddAsync(user, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
+        dbContext.SaveChangesAsync(cancellationToken);
+}
