@@ -1,13 +1,68 @@
-using StudentCenter.IdentityService.API.Extensions;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using StudentCenter.IdentityService.Application.Interfaces;
+using StudentCenter.IdentityService.Application.Services;
+using StudentCenter.IdentityService.Domain.Enums;
 using StudentCenter.IdentityService.Infrastructure.Persistence;
+using StudentCenter.IdentityService.Infrastructure.Repositories;
+using StudentCenter.IdentityService.Infrastructure.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddIdentityPersistence(builder.Configuration);
-builder.Services.AddJwtAuthentication(builder.Configuration);
+
+var connectionString = builder.Configuration.GetConnectionString("IdentityDb")
+    ?? throw new InvalidOperationException("Connection string 'IdentityDb' is not configured.");
+
+var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
+    ?? throw new InvalidOperationException("JWT configuration is missing.");
+
+if (string.IsNullOrWhiteSpace(jwtSettings.Key) || jwtSettings.Key.Length < 32)
+{
+    throw new InvalidOperationException("JWT key must contain at least 32 characters.");
+}
+
+builder.Services.AddDbContext<IdentityDbContext>(options => options.UseSqlServer(connectionString));
+builder.Services.Configure<InitialAdminSettings>(builder.Configuration.GetSection(InitialAdminSettings.SectionName));
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+builder.Services.AddScoped<IdentityDatabaseInitializer>();
+builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
+builder.Services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+builder.Services.AddSingleton<IRefreshTokenService, RefreshTokenService>();
+
+var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key));
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtSettings.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = signingKey,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    foreach (var permission in Enum.GetNames<Permission>())
+    {
+        options.AddPolicy(permission, policy => policy.RequireClaim("permission", permission));
+    }
+});
 
 var app = builder.Build();
 
