@@ -55,6 +55,8 @@ builder.Services.AddScoped<IDocumentStorage, LocalDocumentStorage>();
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<IApplicationReviewRepository, ApplicationReviewRepository>();
 builder.Services.AddScoped<ApplicationReviewService>();
+builder.Services.AddScoped<IScoringRepository, ScoringRepository>();
+builder.Services.AddScoped<ApplicationScoringService>();
 builder.Services.AddScoped<CompetitionService>();
 builder.Services.AddScoped<ApplicationService>();
 
