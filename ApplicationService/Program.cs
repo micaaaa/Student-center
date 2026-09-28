@@ -57,6 +57,8 @@ builder.Services.AddScoped<IApplicationReviewRepository, ApplicationReviewReposi
 builder.Services.AddScoped<ApplicationReviewService>();
 builder.Services.AddScoped<IScoringRepository, ScoringRepository>();
 builder.Services.AddScoped<ApplicationScoringService>();
+builder.Services.AddScoped<IRankingRepository, RankingRepository>();
+builder.Services.AddScoped<PreliminaryRankingService>();
 builder.Services.AddScoped<CompetitionService>();
 builder.Services.AddScoped<ApplicationService>();
 

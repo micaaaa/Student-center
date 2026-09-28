@@ -9,6 +9,8 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<StudentApplication> Applications => Set<StudentApplication>();
     public DbSet<ApplicationDocument> Documents => Set<ApplicationDocument>();
     public DbSet<ScoringResult> Scores => Set<ScoringResult>();
+    public DbSet<Ranking> Rankings => Set<Ranking>();
+    public DbSet<RankingEntry> RankingEntries => Set<RankingEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -34,5 +36,22 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
         score.Property(x => x.TotalPoints).HasPrecision(18, 2);
         score.Property(x => x.DocumentReviewFingerprint).HasMaxLength(64);
         score.Property(x => x.RowVersion).IsRowVersion();
+
+        var ranking = modelBuilder.Entity<Ranking>();
+        ranking.HasIndex(x => new { x.CompetitionId, x.Type }).IsUnique();
+        ranking.HasOne<Competition>().WithMany().HasForeignKey(x => x.CompetitionId)
+            .OnDelete(DeleteBehavior.Restrict);
+        ranking.Property(x => x.SourceFingerprint).HasMaxLength(64);
+        ranking.Property(x => x.RowVersion).IsRowVersion();
+        ranking.HasMany(x => x.Entries).WithOne().HasForeignKey(x => x.RankingId)
+            .OnDelete(DeleteBehavior.Cascade);
+        ranking.Navigation(x => x.Entries).HasField("entries").UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        var entry = modelBuilder.Entity<RankingEntry>();
+        entry.Property(x => x.Id).ValueGeneratedNever();
+        entry.Property(x => x.TotalPoints).HasPrecision(18, 2);
+        entry.HasIndex(x => new { x.RankingId, x.ApplicationId }).IsUnique();
+        entry.HasOne<StudentApplication>().WithMany().HasForeignKey(x => x.ApplicationId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

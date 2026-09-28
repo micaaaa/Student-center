@@ -1,5 +1,4 @@
-using System.Security.Cryptography;
-using System.Text;
+using StudentCenter.ApplicationService.Domain.Services;
 using StudentCenter.ApplicationService.Application.DTOs;
 using StudentCenter.ApplicationService.Application.Interfaces;
 using StudentCenter.ApplicationService.Domain.Entities;
@@ -22,7 +21,7 @@ public sealed class ApplicationScoringService(
             throw new ApplicationConflictException("Only an application under review can be scored.");
 
         var reviewedDocuments = await documents.ListAsync(applicationId, ct);
-        if (!AllDocumentsValid(reviewedDocuments))
+        if (!DocumentReviewSnapshot.AllValid(reviewedDocuments))
             throw new ApplicationConflictException("At least one document is required and every document must be VALID.");
 
         if (request.AcademicPoints is null || request.IncomePoints is null || request.ECTSPoints is null
@@ -38,7 +37,7 @@ public sealed class ApplicationScoringService(
             request.StudyYearPoints.Value,
             request.AdditionalPoints.Value,
             userId,
-            Fingerprint(reviewedDocuments));
+            DocumentReviewSnapshot.Fingerprint(reviewedDocuments));
 
         if (existing is null)
             await scores.AddAsync(score, ct);
@@ -71,24 +70,14 @@ public sealed class ApplicationScoringService(
         var score = await scores.FindAsync(applicationId, ct)
             ?? throw new KeyNotFoundException("The application has not been scored yet.");
         var reviewedDocuments = await documents.ListAsync(applicationId, ct);
-        var isCurrent = AllDocumentsValid(reviewedDocuments)
-            && score.DocumentReviewFingerprint == Fingerprint(reviewedDocuments);
+        var isCurrent = DocumentReviewSnapshot.AllValid(reviewedDocuments)
+            && score.DocumentReviewFingerprint == DocumentReviewSnapshot.Fingerprint(reviewedDocuments);
         return Map(score, isCurrent);
     }
 
     private async Task<StudentApplication> FindApplicationAsync(Guid applicationId, CancellationToken ct) =>
         await applications.GetAsync(applicationId, ct)
         ?? throw new KeyNotFoundException("Application was not found.");
-
-    private static bool AllDocumentsValid(IReadOnlyCollection<ApplicationDocument> items) =>
-        items.Count > 0 && items.All(document => document.Status == DocumentStatus.Valid);
-
-    private static string Fingerprint(IEnumerable<ApplicationDocument> items)
-    {
-        var snapshot = string.Join("|", items.OrderBy(document => document.Id).Select(document =>
-            $"{document.Id:N}:{(int)document.Status}:{document.ReviewedAtUtc?.Ticks}"));
-        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(snapshot)));
-    }
 
     private static ScoringResponse Map(ScoringResult score, bool isCurrent) => new(
         score.Id,
