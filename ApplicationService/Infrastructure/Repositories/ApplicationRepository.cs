@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudentCenter.ApplicationService.Application.Interfaces;
 using StudentCenter.ApplicationService.Domain.Entities;
+using StudentCenter.ApplicationService.Domain.Exceptions;
 using StudentCenter.ApplicationService.Infrastructure.Persistence;
 
 namespace StudentCenter.ApplicationService.Infrastructure.Repositories;
@@ -24,5 +25,15 @@ public sealed class ApplicationRepository(ApplicationDbContext db) : IApplicatio
         .ThenBy(x => x.Id)
         .ToArrayAsync(ct);
 
-    public Task SaveAsync(CancellationToken ct = default) => db.SaveChangesAsync(ct);
+    public async Task SaveAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new ApplicationConflictException("The application has changed. Reload it before retrying.");
+        }
+    }
 }

@@ -42,6 +42,14 @@ public sealed class StudentApplication
         SubmittedAtUtc = DateTime.UtcNow;
     }
 
+    public void StartReview()
+    {
+        if (Status != ApplicationStatus.Submitted)
+            throw new ApplicationConflictException("Only a submitted application can enter review.");
+
+        Status = ApplicationStatus.UnderReview;
+    }
+
     public void Withdraw()
     {
         if (Status is not (ApplicationStatus.Draft or ApplicationStatus.Submitted))

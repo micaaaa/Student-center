@@ -75,7 +75,7 @@ public sealed class ApplicationService(IApplicationRepository applications, ICom
         application.Id,
         application.CompetitionId,
         application.StudentId,
-        application.Status.ToString().ToUpperInvariant(),
+        application.Status == ApplicationStatus.UnderReview ? "UNDER_REVIEW" : application.Status.ToString().ToUpperInvariant(),
         application.CreatedAtUtc,
         application.SubmittedAtUtc,
         application.Note);

@@ -126,7 +126,7 @@ public sealed class DocumentService(
         throw new ArgumentException("File content does not match the selected format.");
     }
 
-    private static DocumentResponse Map(ApplicationDocument document) => new(
+    internal static DocumentResponse Map(ApplicationDocument document) => new(
         document.Id,
         document.ApplicationId,
         document.DocumentType.ToString(),
@@ -134,7 +134,10 @@ public sealed class DocumentService(
         document.ContentType,
         document.Size,
         document.Status.ToString().ToUpperInvariant(),
-        document.UploadedAtUtc);
+        document.UploadedAtUtc,
+        document.ReviewedAtUtc,
+        document.ReviewedByUserId,
+        document.ReviewComment);
 }
 
 public sealed class DocumentTooLargeException() : Exception("The maximum file size is 10 MB.");

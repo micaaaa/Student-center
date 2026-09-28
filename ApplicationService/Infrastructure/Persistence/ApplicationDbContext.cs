@@ -11,7 +11,10 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<StudentApplication>().Property(x => x.Status).IsConcurrencyToken();
         var document = modelBuilder.Entity<ApplicationDocument>();
+        document.Property(x => x.ReviewComment).HasMaxLength(2000);
+        document.Property(x => x.ReviewedAtUtc).IsConcurrencyToken();
         document.Property(x => x.FileName).HasMaxLength(255);
         document.Property(x => x.FileReference).HasMaxLength(32);
         document.Property(x => x.ContentType).HasMaxLength(100);

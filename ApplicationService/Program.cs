@@ -53,6 +53,8 @@ builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
 builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<IDocumentStorage, LocalDocumentStorage>();
 builder.Services.AddScoped<DocumentService>();
+builder.Services.AddScoped<IApplicationReviewRepository, ApplicationReviewRepository>();
+builder.Services.AddScoped<ApplicationReviewService>();
 builder.Services.AddScoped<CompetitionService>();
 builder.Services.AddScoped<ApplicationService>();
 

@@ -8,5 +8,8 @@ public sealed record DocumentResponse(
     string ContentType,
     long Size,
     string Status,
-    DateTime UploadedAtUtc);
+    DateTime UploadedAtUtc,
+    DateTime? ReviewedAtUtc,
+    Guid? ReviewedByUserId,
+    string? ReviewComment);
 public sealed record DocumentDownload(Stream Content, string ContentType, string FileName);
