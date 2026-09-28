@@ -9,7 +9,7 @@ using StudentCenter.ApplicationService.Infrastructure.Persistence;
 
 namespace StudentCenter.ApplicationService.Infrastructure.Repositories;
 
-public sealed class RankingRepository(ApplicationDbContext db) : IRankingRepository
+public class RankingRepository(ApplicationDbContext db) : IRankingRepository
 {
     public Task<Competition?> GetCompetitionAsync(Guid competitionId, CancellationToken ct) =>
         db.Competitions.SingleOrDefaultAsync(competition => competition.Id == competitionId, ct);

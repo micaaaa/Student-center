@@ -50,6 +50,14 @@ public sealed class StudentApplication
         Status = ApplicationStatus.UnderReview;
     }
 
+    public void Decide(bool eligible)
+    {
+        if (Status != ApplicationStatus.UnderReview)
+            throw new ApplicationConflictException("Only an application under review can receive a final decision.");
+
+        Status = eligible ? ApplicationStatus.Accepted : ApplicationStatus.Rejected;
+    }
+
     public void Withdraw()
     {
         if (Status is not (ApplicationStatus.Draft or ApplicationStatus.Submitted))

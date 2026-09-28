@@ -11,10 +11,14 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<ScoringResult> Scores => Set<ScoringResult>();
     public DbSet<Ranking> Rankings => Set<Ranking>();
     public DbSet<RankingEntry> RankingEntries => Set<RankingEntry>();
+    public DbSet<Appeal> Appeals => Set<Appeal>();
+    public DbSet<AccommodationEligibility> Eligibilities => Set<AccommodationEligibility>();
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<StudentApplication>().Property(x => x.Status).IsConcurrencyToken();
+        modelBuilder.Entity<Competition>().Property(x => x.RowVersion).IsRowVersion();
         var document = modelBuilder.Entity<ApplicationDocument>();
         document.Property(x => x.ReviewComment).HasMaxLength(2000);
         document.Property(x => x.ReviewedAtUtc).IsConcurrencyToken();
@@ -52,6 +56,34 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
         entry.Property(x => x.TotalPoints).HasPrecision(18, 2);
         entry.HasIndex(x => new { x.RankingId, x.ApplicationId }).IsUnique();
         entry.HasOne<StudentApplication>().WithMany().HasForeignKey(x => x.ApplicationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        var appeal = modelBuilder.Entity<Appeal>();
+        appeal.HasIndex(x => x.ApplicationId).IsUnique();
+        appeal.Property(x => x.Reason).HasMaxLength(4000);
+        appeal.Property(x => x.Response).HasMaxLength(4000);
+        appeal.Property(x => x.RowVersion).IsRowVersion();
+        appeal.HasOne<StudentApplication>().WithMany().HasForeignKey(x => x.ApplicationId)
+            .OnDelete(DeleteBehavior.Restrict);
+        appeal.HasOne<Competition>().WithMany().HasForeignKey(x => x.CompetitionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        var eligibility = modelBuilder.Entity<AccommodationEligibility>();
+        eligibility.HasIndex(x => x.ApplicationId).IsUnique();
+        eligibility.HasIndex(x => new { x.CompetitionId, x.StudentId }).IsUnique();
+        eligibility.Property(x => x.AcademicYear).HasMaxLength(20);
+        eligibility.HasOne<StudentApplication>().WithMany().HasForeignKey(x => x.ApplicationId)
+            .OnDelete(DeleteBehavior.Restrict);
+        eligibility.HasOne<Competition>().WithMany().HasForeignKey(x => x.CompetitionId)
+            .OnDelete(DeleteBehavior.Restrict);
+        eligibility.HasOne<Ranking>().WithMany().HasForeignKey(x => x.RankingId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        var message = modelBuilder.Entity<OutboxMessage>();
+        message.Property(x => x.Type).HasMaxLength(100);
+        message.HasIndex(x => x.EligibilityId).IsUnique();
+        message.HasIndex(x => x.PublishedAtUtc);
+        message.HasOne<AccommodationEligibility>().WithMany().HasForeignKey(x => x.EligibilityId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

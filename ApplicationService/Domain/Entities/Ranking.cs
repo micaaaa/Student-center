@@ -9,11 +9,11 @@ public sealed class Ranking
     {
     }
 
-    public Ranking(Guid competitionId)
+    public Ranking(Guid competitionId, RankingType type = RankingType.Preliminary)
     {
         Id = Guid.NewGuid();
         CompetitionId = competitionId;
-        Type = RankingType.Preliminary;
+        Type = type;
         Status = RankingStatus.Draft;
     }
 
@@ -28,6 +28,16 @@ public sealed class Ranking
     public Guid? PublishedByUserId { get; private set; }
     public string SourceFingerprint { get; private set; } = null!;
     public byte[] RowVersion { get; private set; } = [];
+    public int? AvailablePlaces { get; private set; }
+
+    public void SetCapacity(int places)
+    {
+        if (Status != RankingStatus.Draft || Type != RankingType.Final)
+            throw new ApplicationConflictException("Capacity belongs to a final draft ranking.");
+        if (places < 0)
+            throw new ArgumentException("Capacity cannot be negative.");
+        AvailablePlaces = places;
+    }
 
     private readonly List<RankingEntry> entries = [];
     public IReadOnlyCollection<RankingEntry> Entries => entries.AsReadOnly();

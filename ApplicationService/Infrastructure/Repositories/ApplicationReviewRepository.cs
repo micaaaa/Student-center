@@ -1,3 +1,5 @@
+using System.Data;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using StudentCenter.ApplicationService.Application.Interfaces;
 using StudentCenter.ApplicationService.Domain.Entities;
@@ -29,13 +31,34 @@ public sealed class ApplicationReviewRepository(ApplicationDbContext db) : IAppl
 
     public async Task SaveAsync(CancellationToken ct)
     {
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         try
         {
+            var applicationIds = db.ChangeTracker.Entries<ApplicationDocument>()
+                .Where(entry => entry.State == EntityState.Modified)
+                .Select(entry => entry.Entity.ApplicationId).Distinct().ToArray();
+            foreach (var applicationId in applicationIds)
+            {
+                var status = await db.Applications.AsNoTracking()
+                    .Where(application => application.Id == applicationId)
+                    .Select(application => application.Status).SingleAsync(ct);
+                if (status != ApplicationStatus.UnderReview)
+                    throw new ApplicationConflictException("The application is no longer under review.");
+            }
             await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
         }
         catch (DbUpdateConcurrencyException)
         {
             throw new ApplicationConflictException("The record has changed. Reload it before retrying.");
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is SqlException { Number: 1205 })
+        {
+            throw new ApplicationConflictException("The review conflicted with another operation. Reload before retrying.");
+        }
+        catch (SqlException exception) when (exception.Number == 1205)
+        {
+            throw new ApplicationConflictException("The review conflicted with another operation. Reload before retrying.");
         }
     }
 }

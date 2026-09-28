@@ -18,12 +18,12 @@ public sealed class DocumentRepository(ApplicationDbContext db) : IDocumentRepos
     public async Task AddAsync(ApplicationDocument document, CancellationToken ct)
     {
         db.Documents.Add(document);
-        await db.SaveChangesAsync(ct);
+        await StudentMutationWriter.SaveAsync(db, ct);
     }
 
     public async Task RemoveAsync(ApplicationDocument document, CancellationToken ct)
     {
         db.Documents.Remove(document);
-        await db.SaveChangesAsync(ct);
+        await StudentMutationWriter.SaveAsync(db, ct);
     }
 }

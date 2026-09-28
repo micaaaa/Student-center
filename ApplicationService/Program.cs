@@ -59,6 +59,10 @@ builder.Services.AddScoped<IScoringRepository, ScoringRepository>();
 builder.Services.AddScoped<ApplicationScoringService>();
 builder.Services.AddScoped<IRankingRepository, RankingRepository>();
 builder.Services.AddScoped<PreliminaryRankingService>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<IConclusionRepository, ConclusionRepository>();
+builder.Services.AddScoped<AppealService>();
+builder.Services.AddScoped<CompetitionConclusionService>();
 builder.Services.AddScoped<CompetitionService>();
 builder.Services.AddScoped<ApplicationService>();
 

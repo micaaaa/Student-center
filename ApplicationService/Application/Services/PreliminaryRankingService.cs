@@ -26,24 +26,7 @@ public sealed class PreliminaryRankingService(IRankingRepository repository, ISt
 
             var candidates = await GetReadyCandidatesAsync(competitionId, token);
             var ranking = existing ?? new Ranking(competitionId);
-            var ordered = candidates.OrderByDescending(candidate => candidate.Score!.TotalPoints)
-                .ThenBy(candidate => tieRule == RankingTieRule.EarlierSubmission
-                    ? candidate.Application.SubmittedAtUtc : DateTime.MinValue)
-                .ThenBy(candidate => candidate.Application.Id)
-                .ToArray();
-
-            var entries = new List<RankingEntry>();
-            var position = 0;
-            for (var index = 0; index < ordered.Length; index++)
-            {
-                if (tieRule == RankingTieRule.EarlierSubmission || index == 0
-                    || ordered[index].Score!.TotalPoints != ordered[index - 1].Score!.TotalPoints)
-                    position = index + 1;
-
-                var candidate = ordered[index];
-                entries.Add(new RankingEntry(ranking.Id, candidate.Application.Id,
-                    candidate.Application.StudentId, position, candidate.Score!.TotalPoints));
-            }
+            var entries = BuildEntries(ranking, candidates, tieRule);
 
             ranking.ReplaceDraft(entries, Fingerprint(candidates), tieRule, userId);
             if (existing is null)
@@ -97,7 +80,7 @@ public sealed class PreliminaryRankingService(IRankingRepository repository, ISt
         await repository.GetPreliminaryAsync(competitionId, ct)
         ?? throw new KeyNotFoundException("Preliminary ranking was not found.");
 
-    private async Task<IReadOnlyCollection<RankingCandidate>> GetReadyCandidatesAsync(
+    internal async Task<IReadOnlyCollection<RankingCandidate>> GetReadyCandidatesAsync(
         Guid competitionId, CancellationToken ct)
     {
         var candidates = (await repository.GetCandidatesAsync(competitionId, ct))
@@ -121,7 +104,32 @@ public sealed class PreliminaryRankingService(IRankingRepository repository, ISt
         return candidates;
     }
 
-    private static string Fingerprint(IEnumerable<RankingCandidate> candidates)
+    internal static IReadOnlyCollection<RankingEntry> BuildEntries(
+        Ranking ranking, IReadOnlyCollection<RankingCandidate> candidates, RankingTieRule tieRule)
+    {
+        var ordered = candidates.OrderByDescending(candidate => candidate.Score!.TotalPoints)
+            .ThenBy(candidate => tieRule == RankingTieRule.EarlierSubmission
+                ? candidate.Application.SubmittedAtUtc : DateTime.MinValue)
+            .ThenBy(candidate => candidate.Application.Id)
+            .ToArray();
+
+        var entries = new List<RankingEntry>();
+        var position = 0;
+        for (var index = 0; index < ordered.Length; index++)
+        {
+            if (tieRule == RankingTieRule.EarlierSubmission || index == 0
+                || ordered[index].Score!.TotalPoints != ordered[index - 1].Score!.TotalPoints)
+                position = index + 1;
+
+            var candidate = ordered[index];
+            entries.Add(new RankingEntry(ranking.Id, candidate.Application.Id,
+                candidate.Application.StudentId, position, candidate.Score!.TotalPoints));
+        }
+
+        return entries;
+    }
+
+    internal static string Fingerprint(IEnumerable<RankingCandidate> candidates)
     {
         var snapshot = string.Join("|", candidates.OrderBy(candidate => candidate.Application.Id).Select(candidate =>
             string.Join(":", candidate.Application.Id.ToString("N"),
