@@ -20,7 +20,6 @@ public sealed class AuthService(
     {
         var username = request.Username.Trim().ToLowerInvariant();
         var email = request.Email.Trim().ToLowerInvariant();
-
         if (await userRepository.GetByUsernameAsync(username, cancellationToken) is not null)
         {
             throw new ConflictException("Username is already in use.");
@@ -85,6 +84,10 @@ public sealed class AuthService(
         var created = refreshTokenService.Create(user.Id);
         await refreshTokenRepository.AddAsync(created.RefreshToken, cancellationToken);
         var expiresAtUtc = DateTime.UtcNow.AddMinutes(jwtOptions.Value.ExpirationMinutes);
-        return new AuthResponse(jwtTokenGenerator.CreateAccessToken(user), created.PlainTextToken, expiresAtUtc, ToUserResponse(user));
+        return new AuthResponse(
+            jwtTokenGenerator.CreateAccessToken(user),
+            created.PlainTextToken,
+            expiresAtUtc,
+            ToUserResponse(user));
     }
 }

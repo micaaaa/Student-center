@@ -12,13 +12,20 @@ namespace StudentCenter.IdentityService.API.Controllers;
 public sealed class UsersController(IUserManagementService userManagementService) : ControllerBase
 {
     [HttpGet]
-    public Task<IReadOnlyCollection<UserResponse>> GetAll(CancellationToken cancellationToken) => userManagementService.GetAllAsync(cancellationToken);
+    public Task<IReadOnlyCollection<UserResponse>> GetAll(CancellationToken cancellationToken) =>
+        userManagementService.GetAllAsync(cancellationToken);
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<UserResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        try { return Ok(await userManagementService.GetByIdAsync(id, cancellationToken)); }
-        catch (NotFoundException exception) { return NotFound(new { message = exception.Message }); }
+        try
+        {
+            return Ok(await userManagementService.GetByIdAsync(id, cancellationToken));
+        }
+        catch (NotFoundException exception)
+        {
+            return NotFound(new { message = exception.Message });
+        }
     }
 
     [HttpPut("{id:guid}/role")]
@@ -39,8 +46,17 @@ public sealed class UsersController(IUserManagementService userManagementService
 
     private async Task<ActionResult<UserResponse>> ExecuteAsync(Func<Task<UserResponse>> action)
     {
-        try { return Ok(await action()); }
-        catch (NotFoundException exception) { return NotFound(new { message = exception.Message }); }
-        catch (ConflictException exception) { return BadRequest(new { message = exception.Message }); }
+        try
+        {
+            return Ok(await action());
+        }
+        catch (NotFoundException exception)
+        {
+            return NotFound(new { message = exception.Message });
+        }
+        catch (ConflictException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
     }
 }

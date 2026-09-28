@@ -11,3 +11,7 @@
 appsettings.Development.local.json
 appsettings.Development.json
 .env
+
+# Private uploaded documents
+App_Data/
+/.editorconfig

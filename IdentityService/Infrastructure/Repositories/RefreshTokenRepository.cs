@@ -9,7 +9,7 @@ public sealed class RefreshTokenRepository(IdentityDbContext dbContext) : IRefre
 {
     public Task<RefreshToken?> GetByTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default) =>
         dbContext.RefreshTokens.Include(token => token.User).ThenInclude(user => user.Permissions)
-            .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
+        .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
 
     public async Task AddAsync(RefreshToken refreshToken, CancellationToken cancellationToken = default)
     {

@@ -15,7 +15,8 @@ public sealed class UserManagementService(IUserRepository userRepository, IAuthS
 
     public async Task<UserResponse> UpdateRoleAsync(Guid id, UpdateRoleRequest request, CancellationToken cancellationToken = default)
     {
-        if (!Enum.TryParse<UserRole>(request.Role, true, out var role)) throw new ConflictException("Role is not valid.");
+        if (!Enum.TryParse<UserRole>(request.Role, true, out var role))
+            throw new ConflictException("Role is not valid.");
         var user = await GetUserAsync(id, cancellationToken);
         user.ChangeRole(role);
         await userRepository.SaveChangesAsync(cancellationToken);
@@ -39,7 +40,10 @@ public sealed class UserManagementService(IUserRepository userRepository, IAuthS
     public async Task<UserResponse> SetAccountStatusAsync(Guid id, bool active, CancellationToken cancellationToken = default)
     {
         var user = await GetUserAsync(id, cancellationToken);
-        if (active) user.Activate(); else user.Deactivate();
+        if (active)
+            user.Activate();
+        else
+            user.Deactivate();
         await userRepository.SaveChangesAsync(cancellationToken);
         return authService.ToUserResponse(user);
     }

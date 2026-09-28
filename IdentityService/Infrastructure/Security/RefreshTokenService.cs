@@ -15,5 +15,6 @@ public sealed class RefreshTokenService(IOptions<JwtSettings> jwtOptions) : IRef
         return (plainTextToken, new RefreshToken(userId, Hash(plainTextToken), expiresAtUtc));
     }
 
-    public string Hash(string plainTextToken) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(plainTextToken)));
+    public string Hash(string plainTextToken) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(plainTextToken)));
 }

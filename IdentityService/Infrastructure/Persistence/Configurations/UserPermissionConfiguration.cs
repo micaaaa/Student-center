@@ -10,7 +10,9 @@ public sealed class UserPermissionConfiguration : IEntityTypeConfiguration<UserP
     {
         builder.ToTable("UserPermissions");
         builder.HasKey(permission => new { permission.UserId, permission.Permission });
-        builder.Property(permission => permission.Permission).HasConversion<string>().HasMaxLength(50).IsRequired();
-        builder.HasOne(permission => permission.User).WithMany(user => user.Permissions).HasForeignKey(permission => permission.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.Property(permission => permission.Permission).HasConversion<string>().HasMaxLength(50)
+            .IsRequired();
+        builder.HasOne(permission => permission.User).WithMany(user => user.Permissions).HasForeignKey(permission => permission.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

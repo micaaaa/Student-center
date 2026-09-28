@@ -6,10 +6,7 @@ using StudentCenter.ApplicationService.Domain.Exceptions;
 
 namespace StudentCenter.ApplicationService.Application.Services;
 
-public sealed class ApplicationService(
-    IApplicationRepository applications,
-    ICompetitionRepository competitions,
-    IStudentClient students)
+public sealed class ApplicationService(IApplicationRepository applications, ICompetitionRepository competitions, IStudentClient students)
 {
     public async Task<ApplicationResponse> CreateAsync(CreateApplicationRequest request, CancellationToken ct)
     {
@@ -28,8 +25,7 @@ public sealed class ApplicationService(
         return (await applications.GetMineAsync(studentId, ct)).Select(Map).ToArray();
     }
 
-    public async Task<ApplicationResponse> GetAsync(Guid id, CancellationToken ct) =>
-        Map(await FindOwnedAsync(id, ct));
+    public async Task<ApplicationResponse> GetAsync(Guid id, CancellationToken ct) => Map(await FindOwnedAsync(id, ct));
 
     public async Task<ApplicationResponse> UpdateAsync(Guid id, UpdateApplicationRequest request, CancellationToken ct)
     {
@@ -67,8 +63,7 @@ public sealed class ApplicationService(
 
     private async Task EnsureCompetitionAcceptsApplicationsAsync(Guid id, CancellationToken ct)
     {
-        var competition = await competitions.GetByIdAsync(id, ct)
-            ?? throw new KeyNotFoundException("Competition was not found.");
+        var competition = await competitions.GetByIdAsync(id, ct) ?? throw new KeyNotFoundException("Competition was not found.");
         var now = DateTime.UtcNow;
         if (competition.Status != CompetitionStatus.Open)
             throw new ApplicationConflictException("Applications are allowed only for an open competition.");
@@ -77,7 +72,11 @@ public sealed class ApplicationService(
     }
 
     private static ApplicationResponse Map(StudentApplication application) => new(
-        application.Id, application.CompetitionId, application.StudentId,
-        application.Status.ToString().ToUpperInvariant(), application.CreatedAtUtc,
-        application.SubmittedAtUtc, application.Note);
+        application.Id,
+        application.CompetitionId,
+        application.StudentId,
+        application.Status.ToString().ToUpperInvariant(),
+        application.CreatedAtUtc,
+        application.SubmittedAtUtc,
+        application.Note);
 }

@@ -24,7 +24,6 @@ public sealed class JwtTokenGenerator(IOptions<JwtSettings> jwtOptions) : IJwtTo
         }.Concat(user.Permissions.Select(permission => new Claim("permission", permission.Permission.ToString())));
         var credentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.Key)), SecurityAlgorithms.HmacSha256);
         var token = new JwtSecurityToken(settings.Issuer, settings.Audience, claims, expires: expiresAtUtc, signingCredentials: credentials);
-
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

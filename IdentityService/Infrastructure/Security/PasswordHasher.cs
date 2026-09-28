@@ -6,8 +6,11 @@ namespace StudentCenter.IdentityService.Infrastructure.Security;
 public sealed class PasswordHasher : IPasswordHasher
 {
     private const int Iterations = 210000;
+
     private const int SaltSize = 16;
+
     private const int HashSize = 32;
+
     private const string Version = "v1";
 
     public string Hash(string password)
@@ -20,8 +23,8 @@ public sealed class PasswordHasher : IPasswordHasher
     public bool Verify(string password, string passwordHash)
     {
         var parts = passwordHash.Split(':');
-        if (parts.Length != 4 || parts[0] != Version || !int.TryParse(parts[1], out var iterations)) return false;
-
+        if (parts.Length != 4 || parts[0] != Version || !int.TryParse(parts[1], out var iterations))
+            return false;
         try
         {
             var salt = Convert.FromBase64String(parts[2]);

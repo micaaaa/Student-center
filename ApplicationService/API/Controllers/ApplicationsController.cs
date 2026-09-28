@@ -37,12 +37,23 @@ public sealed class ApplicationsController(StudentApplicationService service) : 
 
     private async Task<ActionResult<T>> ExecuteAsync<T>(Func<Task<T>> action)
     {
-        try { return Ok(await action()); }
-        catch (KeyNotFoundException exception) { return NotFound(new { message = exception.Message }); }
-        catch (ApplicationConflictException exception) { return Conflict(new { message = exception.Message }); }
+        try
+        {
+            return Ok(await action());
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return NotFound(new { message = exception.Message });
+        }
+        catch (ApplicationConflictException exception)
+        {
+            return Conflict(new { message = exception.Message });
+        }
         catch (HttpRequestException)
         {
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Student service is currently unavailable." });
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new { message = "Student service is currently unavailable." });
         }
         catch (OperationCanceledException) when (!HttpContext.RequestAborted.IsCancellationRequested)
         {

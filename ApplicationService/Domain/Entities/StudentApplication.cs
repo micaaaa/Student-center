@@ -5,7 +5,9 @@ namespace StudentCenter.ApplicationService.Domain.Entities;
 
 public sealed class StudentApplication
 {
-    private StudentApplication() { }
+    private StudentApplication()
+    {
+    }
 
     public StudentApplication(Guid competitionId, Guid studentId, string? note = null)
     {

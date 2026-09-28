@@ -22,7 +22,6 @@ public sealed class RefreshToken
     public DateTime ExpiresAtUtc { get; private set; }
     public DateTime? RevokedAtUtc { get; private set; }
     public User User { get; private set; } = null!;
-
     public bool IsActive => RevokedAtUtc is null && ExpiresAtUtc > DateTime.UtcNow;
 
     public void Revoke() => RevokedAtUtc ??= DateTime.UtcNow;

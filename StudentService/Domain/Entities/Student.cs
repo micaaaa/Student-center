@@ -36,7 +36,17 @@ public sealed class Student
     public StudentStatus Status { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
-    public void UpdateProfile(string firstName, string lastName, string email, string? phone, string? faculty, string? studyProgram, string? studyLevel, int? yearOfStudy, FundingType? fundingType, string? address)
+    public void UpdateProfile(
+        string firstName,
+        string lastName,
+        string email,
+        string? phone,
+        string? faculty,
+        string? studyProgram,
+        string? studyLevel,
+        int? yearOfStudy,
+        FundingType? fundingType,
+        string? address)
     {
         FirstName = firstName;
         LastName = lastName;

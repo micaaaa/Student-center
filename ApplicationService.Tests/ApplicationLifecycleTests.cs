@@ -13,8 +13,11 @@ namespace StudentCenter.ApplicationService.Tests;
 public sealed class ApplicationLifecycleTests
 {
     private Store store = null!;
+
     private StudentClient student = null!;
+
     private Service service = null!;
+
     private Competition competition = null!;
 
     [SetUp]
@@ -44,7 +47,10 @@ public sealed class ApplicationLifecycleTests
         Assert.That(withdrawn.SubmittedAtUtc, Is.EqualTo(submitted.SubmittedAtUtc));
     }
 
-    [TestCase("read")][TestCase("edit")][TestCase("submit")][TestCase("withdraw")]
+    [TestCase("read")]
+    [TestCase("edit")]
+    [TestCase("submit")]
+    [TestCase("withdraw")]
     public void ForeignApplicationIsHiddenAndNotModified(string operation)
     {
         var application = new StudentApplication(competition.Id, Guid.NewGuid(), "original");
@@ -55,27 +61,42 @@ public sealed class ApplicationLifecycleTests
         Assert.That(store.Saves, Is.Zero);
     }
 
-    [TestCase("read")][TestCase("edit")][TestCase("submit")][TestCase("withdraw")]
+    [TestCase("read")]
+    [TestCase("edit")]
+    [TestCase("submit")]
+    [TestCase("withdraw")]
     public void MissingApplicationIsNotFound(string operation) =>
         Assert.ThrowsAsync<KeyNotFoundException>(() => Operate(operation, Guid.NewGuid()));
 
-    [TestCase("future", false)][TestCase("expired", false)][TestCase("closed", false)]
-    [TestCase("future", true)][TestCase("expired", true)][TestCase("closed", true)]
+    [TestCase("future", false)]
+    [TestCase("expired", false)]
+    [TestCase("closed", false)]
+    [TestCase("future", true)]
+    [TestCase("expired", true)]
+    [TestCase("closed", true)]
     public void CreationAndSubmissionRequireActiveCompetition(string state, bool submit)
     {
         var now = DateTime.UtcNow;
-        competition = new Competition("2026/27", "Test", null,
+        competition = new Competition(
+            "2026/27",
+            "Test",
+            null,
             state == "future" ? now.AddDays(1) : now.AddDays(-2),
             state == "expired" ? now.AddDays(-1) : now.AddDays(2));
         competition.Open();
-        if (state == "closed") competition.Close();
+        if (state == "closed")
+            competition.Close();
         store.Competition = competition;
         var application = new StudentApplication(competition.Id, student.Id);
-        if (submit) store.Items.Add(application);
-        Assert.ThrowsAsync<ApplicationConflictException>(async () =>
+        if (submit)
+            store.Items.Add(application);
+        Assert.ThrowsAsync<ApplicationConflictException>(
+            async () =>
         {
-            if (submit) await service.SubmitAsync(application.Id, default);
-            else await service.CreateAsync(new(competition.Id), default);
+            if (submit)
+                await service.SubmitAsync(application.Id, default);
+            else
+                await service.CreateAsync(new(competition.Id), default);
         });
         Assert.That(application.Status, Is.EqualTo(ApplicationStatus.Draft));
         Assert.That(store.Saves, Is.Zero);
@@ -91,8 +112,11 @@ public sealed class ApplicationLifecycleTests
         Assert.That(store.Items.Count, Is.EqualTo(1));
     }
 
-    [TestCase(ApplicationStatus.Submitted)][TestCase(ApplicationStatus.UnderReview)]
-    [TestCase(ApplicationStatus.Accepted)][TestCase(ApplicationStatus.Rejected)][TestCase(ApplicationStatus.Withdrawn)]
+    [TestCase(ApplicationStatus.Submitted)]
+    [TestCase(ApplicationStatus.UnderReview)]
+    [TestCase(ApplicationStatus.Accepted)]
+    [TestCase(ApplicationStatus.Rejected)]
+    [TestCase(ApplicationStatus.Withdrawn)]
     public void NonDraftCannotBeEditedOrSubmitted(ApplicationStatus status)
     {
         var application = WithStatus(status);
@@ -102,8 +126,10 @@ public sealed class ApplicationLifecycleTests
         Assert.That(application.Status, Is.EqualTo(status));
     }
 
-    [TestCase(ApplicationStatus.UnderReview)][TestCase(ApplicationStatus.Accepted)]
-    [TestCase(ApplicationStatus.Rejected)][TestCase(ApplicationStatus.Withdrawn)]
+    [TestCase(ApplicationStatus.UnderReview)]
+    [TestCase(ApplicationStatus.Accepted)]
+    [TestCase(ApplicationStatus.Rejected)]
+    [TestCase(ApplicationStatus.Withdrawn)]
     public void ProcessingAndTerminalStatesCannotBeWithdrawn(ApplicationStatus status)
     {
         var application = WithStatus(status);
@@ -111,7 +137,9 @@ public sealed class ApplicationLifecycleTests
         Assert.That(application.Status, Is.EqualTo(status));
     }
 
-    [TestCase(null)][TestCase("")][TestCase("   ")]
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
     public async Task DraftNoteCanBeCleared(string? note)
     {
         var created = await service.CreateAsync(new(competition.Id, "original"), default);
@@ -140,10 +168,18 @@ public sealed class ApplicationLifecycleTests
     {
         switch (operation)
         {
-            case "read": await service.GetAsync(id, default); break;
-            case "edit": await service.UpdateAsync(id, new("changed"), default); break;
-            case "submit": await service.SubmitAsync(id, default); break;
-            case "withdraw": await service.WithdrawAsync(id, default); break;
+            case "read":
+                await service.GetAsync(id, default);
+                break;
+            case "edit":
+                await service.UpdateAsync(id, new("changed"), default);
+                break;
+            case "submit":
+                await service.SubmitAsync(id, default);
+                break;
+            case "withdraw":
+                await service.WithdrawAsync(id, default);
+                break;
         }
     }
 
@@ -159,6 +195,7 @@ public sealed class ApplicationLifecycleTests
     {
         public Guid Id { get; } = Guid.NewGuid();
         public bool Fail { get; set; }
+
         public Task<Guid> GetCurrentStudentIdAsync(CancellationToken ct = default) =>
             Fail ? throw new HttpRequestException("Unavailable") : Task.FromResult(Id);
     }
@@ -168,14 +205,37 @@ public sealed class ApplicationLifecycleTests
         public List<StudentApplication> Items { get; } = [];
         public Competition? Competition { get; set; }
         public int Saves { get; private set; }
-        public Task<StudentApplication?> GetAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Items.SingleOrDefault(x => x.Id == id));
-        public Task<StudentApplication?> GetForStudentAsync(Guid competitionId, Guid studentId, CancellationToken ct = default) => Task.FromResult(Items.SingleOrDefault(x => x.CompetitionId == competitionId && x.StudentId == studentId));
-        public Task<IReadOnlyCollection<StudentApplication>> GetMineAsync(Guid studentId, CancellationToken ct = default) => Task.FromResult<IReadOnlyCollection<StudentApplication>>(Items.Where(x => x.StudentId == studentId).ToArray());
-        public Task AddAsync(StudentApplication application, CancellationToken ct = default) { Items.Add(application); return Task.CompletedTask; }
-        public Task SaveAsync(CancellationToken ct = default) { Saves++; return Task.CompletedTask; }
-        public Task<Competition?> GetByIdAsync(Guid id, CancellationToken ct = default) => Task.FromResult(Competition?.Id == id ? Competition : null);
-        public Task<IReadOnlyCollection<Competition>> GetAllAsync(CancellationToken ct = default) => throw new NotSupportedException();
-        public Task AddAsync(Competition competition, CancellationToken ct = default) => throw new NotSupportedException();
+
+        public Task<StudentApplication?> GetAsync(Guid id, CancellationToken ct = default) =>
+            Task.FromResult(Items.SingleOrDefault(x => x.Id == id));
+
+        public Task<StudentApplication?> GetForStudentAsync(Guid competitionId, Guid studentId, CancellationToken ct = default) =>
+            Task.FromResult(Items.SingleOrDefault(x => x.CompetitionId == competitionId && x.StudentId == studentId));
+
+        public Task<IReadOnlyCollection<StudentApplication>> GetMineAsync(Guid studentId, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyCollection<StudentApplication>>(Items.Where(x => x.StudentId == studentId).ToArray());
+
+        public Task AddAsync(StudentApplication application, CancellationToken ct = default)
+        {
+            Items.Add(application);
+            return Task.CompletedTask;
+        }
+
+        public Task SaveAsync(CancellationToken ct = default)
+        {
+            Saves++;
+            return Task.CompletedTask;
+        }
+
+        public Task<Competition?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
+            Task.FromResult(Competition?.Id == id ? Competition : null);
+
+        public Task<IReadOnlyCollection<Competition>> GetAllAsync(CancellationToken ct = default) =>
+            throw new NotSupportedException();
+
+        public Task AddAsync(Competition competition, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+
         public Task SaveChangesAsync(CancellationToken ct = default) => throw new NotSupportedException();
     }
 }

@@ -25,3 +25,21 @@ Povlacenje je dozvoljeno za DRAFT i SUBMITTED i nakon isteka konkursa, dok obrad
 Nepostojeca ili tudja prijava vraca 404, sukob poslovnih pravila i nedostajuci studentski profil 409, a nedostupan StudentService 503. Neispravno JSON telo proverava ASP.NET Core (400). Autentifikaciju i ulogu STUDENT proverava autorizacija (401/403).
 
 Testovi koriste memorijske zamene repozitorijuma i Student klijenta. Ne proveravaju SQL Server, JWT middleware niti komunikaciju izmedju pokrenutih servisa.
+
+## Dokumenti uz prijavu
+
+Pokrenuti ApplicationService ponovo da primeni migraciju AddApplicationDocuments. Fajlovi se cuvaju privatno u ApplicationService/App_Data/Documents, van Git-a i javnog web direktorijuma. Pri preseljenju aplikacije potrebno je sacuvati i bazu i ovaj direktorijum.
+
+Za studenta sa profilom i prijavom DRAFT:
+
+1. POST /api/applications/{applicationId}/documents: multipart/form-data; File je PDF, JPG/JPEG ili PNG do 10 MB. DocumentType: 1 potvrda o upisu, 2 uverenje o prihodima, 3 prepis ocena, 4 identifikacioni dokument, 5 ostalo. Swagger prikazuje izbor fajla. Uspeh vraca 201 i status PENDING.
+2. GET /api/applications/{applicationId}/documents: lista metapodataka, bez interne putanje fajla.
+3. GET /api/applications/{applicationId}/documents/{documentId}/download: privatno preuzimanje fajla sa originalnim nazivom.
+4. DELETE /api/applications/{applicationId}/documents/{documentId}: brisanje dokumenta iz nacrta, odgovor 204.
+5. Posle slanja prijave pregled i preuzimanje i dalje rade; dodavanje i brisanje vracaju 409.
+6. Drugi student dobija 404. Nepostojeci dokument ili dokument iz druge prijave takodje vraca 404.
+7. Nepodrzan format, prazan fajl ili nepodudaranje ekstenzije i potpisa vracaju 400; prevelik fajl 413 (infrastrukturni limit multipart zahteva takodje moze odbiti zahtev pre kontrolera).
+
+Provera formata koristi pocetni potpis fajla; nije potpuna provera ispravnosti sadrzaja niti antivirusno skeniranje. Za ovaj korak dokumenti nisu obavezan uslov za slanje prijave; pravila obavezne dokumentacije i pregled osoblja dolaze kasnije.
+
+Testovi dokumenata pokrivaju autorizaciju na nivou servisa, dozvoljene statuse, velicinu, format, preuzimanje istih bajtova i kompenzaciju neuspelog upisa u bazu. Ako fizicko brisanje ne uspe nakon uklanjanja zapisa, fajl ostaje nedostupan kroz API, a greska se upisuje u log radi naknadnog ciscenja.

@@ -1,3 +1,37 @@
-using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Mvc; using StudentCenter.ApplicationService.Application.DTOs; using StudentCenter.ApplicationService.Application.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using StudentCenter.ApplicationService.Application.DTOs;
+using StudentCenter.ApplicationService.Application.Services;
+
 namespace StudentCenter.ApplicationService.API.Controllers;
-[ApiController][Route("api/competitions")] public sealed class CompetitionsController(CompetitionService service):ControllerBase { [HttpGet][AllowAnonymous] public Task<IReadOnlyCollection<CompetitionResponse>> GetAll(CancellationToken ct)=>service.GetAllAsync(ct); [HttpGet("{id:guid}")][AllowAnonymous] public Task<CompetitionResponse> Get(Guid id,CancellationToken ct)=>service.GetAsync(id,ct); [HttpPost][Authorize(Policy="ManageApplications")] public Task<CompetitionResponse> Create(CreateCompetitionRequest r,CancellationToken ct)=>service.CreateAsync(r,ct); [HttpPut("{id:guid}")][Authorize(Policy="ManageApplications")] public Task<CompetitionResponse> Update(Guid id,UpdateCompetitionRequest r,CancellationToken ct)=>service.UpdateAsync(id,r,ct); [HttpPost("{id:guid}/open")][Authorize(Policy="ManageApplications")] public Task<CompetitionResponse> Open(Guid id,CancellationToken ct)=>service.OpenAsync(id,ct); [HttpPost("{id:guid}/close")][Authorize(Policy="ManageApplications")] public Task<CompetitionResponse> Close(Guid id,CancellationToken ct)=>service.CloseAsync(id,ct); }
+
+[ApiController]
+[Route("api/competitions")]
+public sealed class CompetitionsController(CompetitionService service) : ControllerBase
+{
+    [HttpGet]
+    [AllowAnonymous]
+    public Task<IReadOnlyCollection<CompetitionResponse>> GetAll(CancellationToken ct) => service.GetAllAsync(ct);
+
+    [HttpGet("{id:guid}")]
+    [AllowAnonymous]
+    public Task<CompetitionResponse> Get(Guid id, CancellationToken ct) => service.GetAsync(id, ct);
+
+    [HttpPost]
+    [Authorize(Policy = "ManageApplications")]
+    public Task<CompetitionResponse> Create(CreateCompetitionRequest r, CancellationToken ct) =>
+        service.CreateAsync(r, ct);
+
+    [HttpPut("{id:guid}")]
+    [Authorize(Policy = "ManageApplications")]
+    public Task<CompetitionResponse> Update(Guid id, UpdateCompetitionRequest r, CancellationToken ct) =>
+        service.UpdateAsync(id, r, ct);
+
+    [HttpPost("{id:guid}/open")]
+    [Authorize(Policy = "ManageApplications")]
+    public Task<CompetitionResponse> Open(Guid id, CancellationToken ct) => service.OpenAsync(id, ct);
+
+    [HttpPost("{id:guid}/close")]
+    [Authorize(Policy = "ManageApplications")]
+    public Task<CompetitionResponse> Close(Guid id, CancellationToken ct) => service.CloseAsync(id, ct);
+}

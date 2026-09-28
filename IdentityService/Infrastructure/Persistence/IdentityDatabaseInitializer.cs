@@ -14,12 +14,16 @@ public sealed class IdentityDatabaseInitializer(
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         await dbContext.Database.MigrateAsync(cancellationToken);
-
         var settings = initialAdminOptions.Value;
-        if (string.IsNullOrWhiteSpace(settings.Email) || string.IsNullOrWhiteSpace(settings.Password)) return;
-        if (await dbContext.Users.AnyAsync(user => user.Email == settings.Email.ToLowerInvariant(), cancellationToken)) return;
-
-        var admin = new User(settings.Username.ToLowerInvariant(), settings.Email.ToLowerInvariant(), passwordHasher.Hash(settings.Password), UserRole.Admin);
+        if (string.IsNullOrWhiteSpace(settings.Email) || string.IsNullOrWhiteSpace(settings.Password))
+            return;
+        if (await dbContext.Users.AnyAsync(user => user.Email == settings.Email.ToLowerInvariant(), cancellationToken))
+            return;
+        var admin = new User(
+            settings.Username.ToLowerInvariant(),
+            settings.Email.ToLowerInvariant(),
+            passwordHasher.Hash(settings.Password),
+            UserRole.Admin);
         admin.ReplacePermissions(Enum.GetValues<Permission>());
         dbContext.Users.Add(admin);
         await dbContext.SaveChangesAsync(cancellationToken);
