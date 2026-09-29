@@ -9,6 +9,7 @@ using StudentCenter.AccommodationService.Infrastructure.Persistence;
 using StudentCenter.AccommodationService.Infrastructure.Repositories;
 using StudentCenter.AccommodationService.Infrastructure.Messaging;
 using StudentCenter.Messaging;
+using StudentCenter.AccommodationService.Infrastructure.ExternalServices;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("AccommodationDb");
@@ -50,6 +51,15 @@ builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
 builder.Services.AddScoped<InventoryService>();
 builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
 builder.Services.AddScoped<AssignmentService>();
+builder.Services.AddScoped<IStudentAccommodationReader, StudentAccommodationReader>();
+builder.Services.AddScoped<MyAccommodationService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient<ICurrentStudentClient, CurrentStudentClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:StudentServiceUrl"]
+        ?? "https://localhost:49686/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.Configure<RabbitOptions>(builder.Configuration.GetSection("RabbitMQ"));
 builder.Services.AddHostedService<EligibilityConsumer>();
