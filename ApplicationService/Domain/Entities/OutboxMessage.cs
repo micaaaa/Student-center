@@ -15,6 +15,11 @@ public sealed class OutboxMessage
     public DateTime OccurredAtUtc { get; private set; }
     public DateTime? PublishedAtUtc { get; private set; }
 
+    public void MarkPublished(DateTime now)
+    {
+        PublishedAtUtc ??= now;
+    }
+
     public static OutboxMessage EligibilityGranted(AccommodationEligibility decision)
     {
         if (!decision.Eligible)

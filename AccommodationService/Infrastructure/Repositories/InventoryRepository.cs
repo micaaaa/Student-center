@@ -62,7 +62,8 @@ public sealed class InventoryRepository(AccommodationDbContext db) : IInventoryR
         catch (DbUpdateException exception) when (
             exception.InnerException is SqlException { Number: 2601 or 2627 })
         {
-            throw new AccommodationConflictException("Room number already exists in this dorm.");
+            throw new AccommodationConflictException(
+                "A duplicate room, eligibility event or active student assignment was detected. Reload before retrying.");
         }
         catch (DbUpdateException exception) when (exception.InnerException is SqlException { Number: 1205 })
         {

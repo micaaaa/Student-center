@@ -7,6 +7,8 @@ using StudentCenter.AccommodationService.Application.Interfaces;
 using StudentCenter.AccommodationService.Application.Services;
 using StudentCenter.AccommodationService.Infrastructure.Persistence;
 using StudentCenter.AccommodationService.Infrastructure.Repositories;
+using StudentCenter.AccommodationService.Infrastructure.Messaging;
+using StudentCenter.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("AccommodationDb");
@@ -46,6 +48,11 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<AccommodationDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
 builder.Services.AddScoped<InventoryService>();
+builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+builder.Services.AddScoped<AssignmentService>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.Configure<RabbitOptions>(builder.Configuration.GetSection("RabbitMQ"));
+builder.Services.AddHostedService<EligibilityConsumer>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

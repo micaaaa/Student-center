@@ -1,0 +1,10 @@
+{
+  "RabbitMQ": {
+    "Enabled": true,
+    "HostName": "localhost",
+    "Port": 5672,
+    "VirtualHost": "/",
+    "UserName": "REPLACE_WITH_LOCAL_USER",
+    "Password": "REPLACE_WITH_LOCAL_PASSWORD"
+  }
+}

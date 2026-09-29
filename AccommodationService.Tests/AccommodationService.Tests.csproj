@@ -8,5 +8,6 @@
     <PackageReference Include="NUnit" Version="4.2.2" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
     <ProjectReference Include="../AccommodationService/AccommodationService.csproj" />
+    <ProjectReference Include="../ApplicationService/ApplicationService.csproj" />
   </ItemGroup>
 </Project>

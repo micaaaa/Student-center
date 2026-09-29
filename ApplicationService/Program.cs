@@ -9,6 +9,8 @@ using StudentCenter.ApplicationService.Infrastructure.ExternalServices;
 using StudentCenter.ApplicationService.Infrastructure.Persistence;
 using StudentCenter.ApplicationService.Infrastructure.Repositories;
 using StudentCenter.ApplicationService.Infrastructure.Storage;
+using StudentCenter.ApplicationService.Infrastructure.Messaging;
+using StudentCenter.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -60,6 +62,8 @@ builder.Services.AddScoped<ApplicationScoringService>();
 builder.Services.AddScoped<IRankingRepository, RankingRepository>();
 builder.Services.AddScoped<PreliminaryRankingService>();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.Configure<RabbitOptions>(builder.Configuration.GetSection("RabbitMQ"));
+builder.Services.AddHostedService<EligibilityOutboxPublisher>();
 builder.Services.AddScoped<IConclusionRepository, ConclusionRepository>();
 builder.Services.AddScoped<AppealService>();
 builder.Services.AddScoped<CompetitionConclusionService>();

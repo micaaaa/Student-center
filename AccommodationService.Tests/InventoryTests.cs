@@ -241,7 +241,7 @@ public sealed class InventoryTests
         services.AddAuthorization(options => options.AddPolicy("ManageAccommodation", policy =>
             policy.RequireAuthenticatedUser().RequireClaim("permission", "ManageAccommodation")));
         using var provider = services.BuildServiceProvider();
-        foreach (var type in new[] { typeof(DormsController), typeof(RoomsController) })
+        foreach (var type in new[] { typeof(DormsController), typeof(RoomsController), typeof(AssignmentsController) })
         {
             var metadata = type.GetCustomAttributes(typeof(AuthorizeAttribute), true).Cast<IAuthorizeData>();
             var policy = await AuthorizationPolicy.CombineAsync(provider.GetRequiredService<IAuthorizationPolicyProvider>(), metadata);
@@ -263,7 +263,8 @@ public sealed class InventoryTests
         Assert.That(room.GetIndexes().Any(index => index.IsUnique
             && index.Properties.Select(item => item.Name).SequenceEqual(new[] { "DormId", "RoomNumber" })), Is.True);
         Assert.That(room.FindProperty(nameof(Room.RowVersion))!.IsConcurrencyToken, Is.True);
-        Assert.That(db.Model.GetEntityTypes().Select(entity => entity.ClrType), Is.EquivalentTo(new[] { typeof(Dorm), typeof(Room) }));
+        Assert.That(db.Model.GetEntityTypes().Select(entity => entity.ClrType),
+            Is.EquivalentTo(new[] { typeof(Dorm), typeof(Room), typeof(ReceivedEligibility), typeof(StudentAccommodation) }));
     }
 
     private sealed class Store : IInventoryRepository
