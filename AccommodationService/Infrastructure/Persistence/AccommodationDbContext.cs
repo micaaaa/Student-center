@@ -9,6 +9,8 @@ public sealed class AccommodationDbContext(DbContextOptions<AccommodationDbConte
     public DbSet<Room> Rooms => Set<Room>();
     public DbSet<ReceivedEligibility> ReceivedEligibilities => Set<ReceivedEligibility>();
     public DbSet<StudentAccommodation> StudentAccommodations => Set<StudentAccommodation>();
+    public DbSet<MoveIn> MoveIns => Set<MoveIn>();
+    public DbSet<MoveOut> MoveOuts => Set<MoveOut>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -44,5 +46,21 @@ public sealed class AccommodationDbContext(DbContextOptions<AccommodationDbConte
             .HasForeignKey(item => item.EligibilityId).OnDelete(DeleteBehavior.Restrict);
         assignment.HasOne<Room>().WithMany()
             .HasForeignKey(item => item.RoomId).OnDelete(DeleteBehavior.Restrict);
+
+        var moveIn = modelBuilder.Entity<MoveIn>();
+        moveIn.Property(item => item.Id).ValueGeneratedNever();
+        moveIn.Property(item => item.DateUtc).HasConversion(
+            value => value, value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
+        moveIn.Property(item => item.MedicalCertificateReference).HasMaxLength(250);
+        assignment.HasOne(item => item.MoveIn).WithOne()
+            .HasForeignKey<MoveIn>(item => item.AccommodationId).OnDelete(DeleteBehavior.Restrict);
+
+        var moveOut = modelBuilder.Entity<MoveOut>();
+        moveOut.Property(item => item.Id).ValueGeneratedNever();
+        moveOut.Property(item => item.DateUtc).HasConversion(
+            value => value, value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
+        moveOut.Property(item => item.Reason).HasMaxLength(1000);
+        assignment.HasOne(item => item.MoveOut).WithOne()
+            .HasForeignKey<MoveOut>(item => item.AccommodationId).OnDelete(DeleteBehavior.Restrict);
     }
 }

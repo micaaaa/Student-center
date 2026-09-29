@@ -43,4 +43,24 @@ public sealed class AssignmentsController(AssignmentService service) : Inventory
                 return Unauthorized();
             return Ok(await service.CancelAsync(id, request.Reason, staffId, ct));
         });
+
+    [HttpPost("accommodations/{id:guid}/move-in")]
+    public Task<IActionResult> MoveIn(Guid id, MoveInRequest request, CancellationToken ct) =>
+        ExecuteAsync(async () =>
+        {
+            if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var staffId)
+                || staffId == Guid.Empty)
+                return Unauthorized();
+            return Ok(await service.MoveInAsync(id, request, staffId, ct));
+        });
+
+    [HttpPost("accommodations/{id:guid}/move-out")]
+    public Task<IActionResult> MoveOut(Guid id, MoveOutRequest request, CancellationToken ct) =>
+        ExecuteAsync(async () =>
+        {
+            if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var staffId)
+                || staffId == Guid.Empty)
+                return Unauthorized();
+            return Ok(await service.MoveOutAsync(id, request, staffId, ct));
+        });
 }

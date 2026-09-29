@@ -29,10 +29,12 @@ public sealed class AssignmentRepository(AccommodationDbContext db) : IAssignmen
         db.StudentAccommodations.AnyAsync(item => item.StudentId == studentId && item.IsActive, ct);
 
     public Task<StudentAccommodation?> GetAssignmentAsync(Guid id, CancellationToken ct) =>
-        db.StudentAccommodations.SingleOrDefaultAsync(item => item.Id == id, ct);
+        db.StudentAccommodations.Include(item => item.MoveIn).Include(item => item.MoveOut)
+            .SingleOrDefaultAsync(item => item.Id == id, ct);
 
     public async Task<IReadOnlyCollection<StudentAccommodation>> GetHistoryAsync(Guid studentId, CancellationToken ct) =>
         await db.StudentAccommodations.AsNoTracking()
+            .Include(item => item.MoveIn).Include(item => item.MoveOut)
             .Where(item => item.StudentId == studentId)
             .OrderByDescending(item => item.AssignedAtUtc)
             .ThenBy(item => item.Id)

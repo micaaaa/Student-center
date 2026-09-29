@@ -37,6 +37,36 @@ public sealed class StudentAccommodation
     public DateTime? CancelledAtUtc { get; private set; }
     public string? CancellationReason { get; private set; }
     public byte[] RowVersion { get; private set; } = [];
+    public MoveIn? MoveIn { get; private set; }
+    public MoveOut? MoveOut { get; private set; }
+
+    public void RecordMoveIn(Guid staffId, string certificateReference, DateTime now)
+    {
+        if (!IsActive || Status != "ASSIGNED" || MoveIn is not null)
+            throw new AccommodationConflictException("Only an assigned accommodation can be moved into once.");
+        if (staffId == Guid.Empty || string.IsNullOrWhiteSpace(certificateReference)
+            || certificateReference.Trim().Length > 250)
+            throw new ArgumentException("Staff identifier and a medical certificate reference up to 250 characters are required.");
+        if (now.Kind != DateTimeKind.Utc || now < AssignedAtUtc)
+            throw new ArgumentException("Move-in time must be UTC and cannot precede assignment.");
+
+        MoveIn = new MoveIn(Id, now, certificateReference.Trim(), staffId);
+        Status = "ACTIVE";
+    }
+
+    public void RecordMoveOut(Guid staffId, string reason, DateTime now)
+    {
+        if (!IsActive || Status != "ACTIVE" || MoveIn is null || MoveOut is not null)
+            throw new AccommodationConflictException("Only a moved-in accommodation can be moved out of once.");
+        if (staffId == Guid.Empty || string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > 1000)
+            throw new ArgumentException("Staff identifier and a move-out reason up to 1000 characters are required.");
+        if (now.Kind != DateTimeKind.Utc || now < MoveIn.DateUtc)
+            throw new ArgumentException("Move-out time must be UTC and cannot precede move-in.");
+
+        MoveOut = new MoveOut(Id, now, reason.Trim(), staffId);
+        Status = "COMPLETED";
+        IsActive = false;
+    }
 
     public void Cancel(Guid staffId, string reason, DateTime now)
     {

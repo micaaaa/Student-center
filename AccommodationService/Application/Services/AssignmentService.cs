@@ -74,6 +74,30 @@ public sealed class AssignmentService(
             return Map(assignment);
         }, ct);
 
+    public Task<AssignmentResponse> MoveInAsync(
+        Guid id, MoveInRequest request, Guid staffId, CancellationToken ct) =>
+        inventory.InTransactionAsync(async token =>
+        {
+            var assignment = await FindAsync(id, token);
+            assignment.RecordMoveIn(staffId, request.MedicalCertificateReference, clock.GetUtcNow().UtcDateTime);
+            // The bed was already reserved when the room was assigned.
+            await inventory.SaveAsync(token);
+            return Map(assignment);
+        }, ct);
+
+    public Task<AssignmentResponse> MoveOutAsync(
+        Guid id, MoveOutRequest request, Guid staffId, CancellationToken ct) =>
+        inventory.InTransactionAsync(async token =>
+        {
+            var assignment = await FindAsync(id, token);
+            var room = await inventory.GetRoomAsync(assignment.RoomId, token)
+                ?? throw new KeyNotFoundException("Room was not found.");
+            assignment.RecordMoveOut(staffId, request.Reason, clock.GetUtcNow().UtcDateTime);
+            room.ReleaseBed();
+            await inventory.SaveAsync(token);
+            return Map(assignment);
+        }, ct);
+
     public async Task<AssignmentResponse> GetAsync(Guid id, CancellationToken ct) =>
         Map(await FindAsync(id, ct));
 
@@ -87,5 +111,9 @@ public sealed class AssignmentService(
     private static AssignmentResponse Map(StudentAccommodation item) => new(
         item.Id, item.EligibilityId, item.StudentId, item.RoomId, item.AcademicYear,
         item.Status, item.AssignedBy, item.AssignedAtUtc,
-        item.CancelledBy, item.CancelledAtUtc, item.CancellationReason);
+        item.CancelledBy, item.CancelledAtUtc, item.CancellationReason,
+        item.MoveIn is null ? null : new MoveInResponse(
+            item.MoveIn.Id, item.MoveIn.DateUtc, item.MoveIn.MedicalCertificateReference, item.MoveIn.RecordedBy),
+        item.MoveOut is null ? null : new MoveOutResponse(
+            item.MoveOut.Id, item.MoveOut.DateUtc, item.MoveOut.Reason, item.MoveOut.RecordedBy));
 }

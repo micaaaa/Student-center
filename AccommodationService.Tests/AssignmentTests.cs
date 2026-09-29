@@ -218,6 +218,153 @@ public sealed class AssignmentTests
         Assert.That(assignment.FindProperty(nameof(StudentAccommodation.RowVersion))!.IsConcurrencyToken, Is.True);
     }
 
+    [Test]
+    public async Task MoveInKeepsReservedBedAndMoveOutReleasesItWhilePreservingHistory()
+    {
+        var message = Event();
+        await service.ReceiveEligibilityAsync(message, default);
+        var assigned = await service.AssignAsync(new(message.EligibilityId, store.Room.Id), staffId, default);
+        var movedIn = await service.MoveInAsync(assigned.Id,
+            new MoveInRequest { MedicalCertificateReference = "  CERT-2026-1  " }, staffId, default);
+
+        Assert.That(movedIn.Status, Is.EqualTo("ACTIVE"));
+        Assert.That(movedIn.MoveIn!.MedicalCertificateReference, Is.EqualTo("CERT-2026-1"));
+        Assert.That(movedIn.MoveIn.RecordedBy, Is.EqualTo(staffId));
+        Assert.That(movedIn.MoveIn.DateUtc, Is.GreaterThanOrEqualTo(assigned.AssignedAtUtc));
+        Assert.That(store.Room.OccupiedBeds, Is.EqualTo(1));
+        Assert.That(store.Assignments.Single().IsActive, Is.True);
+        Assert.ThrowsAsync<AccommodationConflictException>(() =>
+            service.CancelAsync(assigned.Id, "Otkazivanje", staffId, default));
+        Assert.ThrowsAsync<AccommodationConflictException>(() =>
+            service.AssignAsync(new(message.EligibilityId, store.Room.Id), staffId, default));
+
+        var movedOut = await service.MoveOutAsync(assigned.Id,
+            new MoveOutRequest { Reason = "  Završetak boravka  " }, staffId, default);
+        Assert.That(movedOut.Status, Is.EqualTo("COMPLETED"));
+        Assert.That(movedOut.MoveOut!.Reason, Is.EqualTo("Završetak boravka"));
+        Assert.That(movedOut.MoveOut.RecordedBy, Is.EqualTo(staffId));
+        Assert.That(movedOut.MoveOut.DateUtc, Is.GreaterThanOrEqualTo(movedIn.MoveIn.DateUtc));
+        Assert.That(store.Room.OccupiedBeds, Is.Zero);
+        Assert.That(store.Room.Status, Is.EqualTo(RoomStatus.Available));
+        Assert.That(store.Assignments.Single().IsActive, Is.False);
+
+        await service.AssignAsync(new(message.EligibilityId, store.Room.Id), staffId, default);
+        var history = await service.GetHistoryAsync(message.StudentId, default);
+        Assert.That(history, Has.Count.EqualTo(2));
+        var completed = history.Single(item => item.Id == assigned.Id);
+        Assert.That(completed.MoveIn!.Id, Is.EqualTo(movedIn.MoveIn.Id));
+        Assert.That(completed.MoveOut!.Id, Is.EqualTo(movedOut.MoveOut.Id));
+    }
+
+    [Test]
+    public async Task RepeatedMoveInOrMoveOutDoesNotChangeOccupancy()
+    {
+        var message = Event();
+        await service.ReceiveEligibilityAsync(message, default);
+        var assigned = await service.AssignAsync(new(message.EligibilityId, store.Room.Id), staffId, default);
+        var moveIn = new MoveInRequest { MedicalCertificateReference = "CERT-1" };
+        var moveOut = new MoveOutRequest { Reason = "Završetak" };
+        await service.MoveInAsync(assigned.Id, moveIn, staffId, default);
+        Assert.ThrowsAsync<AccommodationConflictException>(() =>
+            service.MoveInAsync(assigned.Id, moveIn, staffId, default));
+        Assert.That(store.Room.OccupiedBeds, Is.EqualTo(1));
+        await service.MoveOutAsync(assigned.Id, moveOut, staffId, default);
+        Assert.ThrowsAsync<AccommodationConflictException>(() =>
+            service.MoveOutAsync(assigned.Id, moveOut, staffId, default));
+        Assert.ThrowsAsync<AccommodationConflictException>(() =>
+            service.MoveInAsync(assigned.Id, moveIn, staffId, default));
+        Assert.That(store.Room.OccupiedBeds, Is.Zero);
+    }
+
+    [Test]
+    public async Task MoveOutBeforeMoveInAndMoveInAfterCancellationAreRejected()
+    {
+        var message = Event();
+        await service.ReceiveEligibilityAsync(message, default);
+        var assigned = await service.AssignAsync(new(message.EligibilityId, store.Room.Id), staffId, default);
+        Assert.ThrowsAsync<AccommodationConflictException>(() => service.MoveOutAsync(assigned.Id,
+            new MoveOutRequest { Reason = "Završetak" }, staffId, default));
+        Assert.That(store.Room.OccupiedBeds, Is.EqualTo(1));
+        await service.CancelAsync(assigned.Id, "Odustao", staffId, default);
+        Assert.ThrowsAsync<AccommodationConflictException>(() => service.MoveInAsync(assigned.Id,
+            new MoveInRequest { MedicalCertificateReference = "CERT-1" }, staffId, default));
+        Assert.That(store.Room.OccupiedBeds, Is.Zero);
+    }
+
+    [TestCase("")]
+    [TestCase("   ")]
+    public async Task EmptyCertificateAndMoveOutReasonDoNotChangeState(string value)
+    {
+        var message = Event();
+        await service.ReceiveEligibilityAsync(message, default);
+        var assigned = await service.AssignAsync(new(message.EligibilityId, store.Room.Id), staffId, default);
+        Assert.ThrowsAsync<ArgumentException>(() => service.MoveInAsync(assigned.Id,
+            new MoveInRequest { MedicalCertificateReference = value }, staffId, default));
+        Assert.That(store.Assignments.Single().Status, Is.EqualTo("ASSIGNED"));
+        Assert.That(store.Assignments.Single().MoveIn, Is.Null);
+        await service.MoveInAsync(assigned.Id,
+            new MoveInRequest { MedicalCertificateReference = "CERT-1" }, staffId, default);
+        Assert.ThrowsAsync<ArgumentException>(() => service.MoveOutAsync(assigned.Id,
+            new MoveOutRequest { Reason = value }, staffId, default));
+        Assert.That(store.Assignments.Single().Status, Is.EqualTo("ACTIVE"));
+        Assert.That(store.Assignments.Single().MoveOut, Is.Null);
+        Assert.That(store.Room.OccupiedBeds, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task MissingAccommodationReturnsNotFoundForBothTransitions()
+    {
+        Assert.ThrowsAsync<KeyNotFoundException>(() => service.MoveInAsync(Guid.NewGuid(),
+            new MoveInRequest { MedicalCertificateReference = "CERT-1" }, staffId, default));
+        Assert.ThrowsAsync<KeyNotFoundException>(() => service.MoveOutAsync(Guid.NewGuid(),
+            new MoveOutRequest { Reason = "Završetak" }, staffId, default));
+        Assert.That(await service.GetHistoryAsync(Guid.NewGuid(), default), Is.Empty);
+    }
+
+    [Test]
+    public void InvalidStaffDatesAndOversizedFieldsAreRejectedBeforeMutation()
+    {
+        var now = DateTime.UtcNow;
+        var eligibility = new ReceivedEligibility(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+            Guid.NewGuid(), "2026/2027", now.AddDays(-1));
+        var assignment = new StudentAccommodation(eligibility, store.Room.Id, staffId, now);
+        Assert.Throws<ArgumentException>(() => assignment.RecordMoveIn(Guid.Empty, "CERT-1", now));
+        Assert.Throws<ArgumentException>(() => assignment.RecordMoveIn(staffId, "CERT-1", now.AddSeconds(-1)));
+        Assert.Throws<ArgumentException>(() => assignment.RecordMoveIn(staffId, new string('x', 251), now));
+        Assert.That(assignment.MoveIn, Is.Null);
+        assignment.RecordMoveIn(staffId, "CERT-1", now.AddHours(1));
+        Assert.Throws<ArgumentException>(() => assignment.RecordMoveOut(Guid.Empty, "Kraj", now.AddHours(2)));
+        Assert.Throws<ArgumentException>(() => assignment.RecordMoveOut(staffId, "Kraj", now));
+        Assert.Throws<ArgumentException>(() => assignment.RecordMoveOut(staffId, new string('x', 1001), now.AddHours(2)));
+        Assert.That(assignment.MoveOut, Is.Null);
+        Assert.That(assignment.IsActive, Is.True);
+    }
+
+    [Test]
+    public void EfTracksNewMoveRecordsAsInsertsAndEnforcesOneOfEachPerAccommodation()
+    {
+        using var db = new AccommodationDbContext(new DbContextOptionsBuilder<AccommodationDbContext>()
+            .UseSqlServer("Server=unused;Database=unused;Integrated Security=true").Options);
+        var now = DateTime.UtcNow;
+        var eligibility = new ReceivedEligibility(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+            Guid.NewGuid(), "2026/2027", now.AddDays(-1));
+        var assignment = new StudentAccommodation(eligibility, store.Room.Id, staffId, now);
+        db.Attach(assignment);
+        assignment.RecordMoveIn(staffId, "CERT-1", now);
+        db.ChangeTracker.DetectChanges();
+        Assert.That(db.Entry(assignment.MoveIn!).State, Is.EqualTo(EntityState.Added));
+        db.ChangeTracker.AcceptAllChanges();
+        assignment.RecordMoveOut(staffId, "Kraj", now.AddHours(1));
+        db.ChangeTracker.DetectChanges();
+        Assert.That(db.Entry(assignment.MoveOut!).State, Is.EqualTo(EntityState.Added));
+        foreach (var type in new[] { typeof(MoveIn), typeof(MoveOut) })
+        {
+            var entity = db.Model.FindEntityType(type)!;
+            Assert.That(entity.GetIndexes().Single().IsUnique, Is.True);
+            Assert.That(entity.GetForeignKeys().Single().DeleteBehavior, Is.EqualTo(DeleteBehavior.Restrict));
+        }
+    }
+
     private sealed class Store : IAssignmentRepository, IInventoryRepository
     {
         public Dorm Dorm { get; } = new("Dom", "Adresa", "Grad", "I", 10);

@@ -264,7 +264,11 @@ public sealed class InventoryTests
             && index.Properties.Select(item => item.Name).SequenceEqual(new[] { "DormId", "RoomNumber" })), Is.True);
         Assert.That(room.FindProperty(nameof(Room.RowVersion))!.IsConcurrencyToken, Is.True);
         Assert.That(db.Model.GetEntityTypes().Select(entity => entity.ClrType),
-            Is.EquivalentTo(new[] { typeof(Dorm), typeof(Room), typeof(ReceivedEligibility), typeof(StudentAccommodation) }));
+            Is.EquivalentTo(new[]
+            {
+                typeof(Dorm), typeof(Room), typeof(ReceivedEligibility),
+                typeof(StudentAccommodation), typeof(MoveIn), typeof(MoveOut)
+            }));
     }
 
     private sealed class Store : IInventoryRepository
