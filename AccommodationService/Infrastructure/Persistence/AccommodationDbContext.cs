@@ -11,9 +11,19 @@ public sealed class AccommodationDbContext(DbContextOptions<AccommodationDbConte
     public DbSet<StudentAccommodation> StudentAccommodations => Set<StudentAccommodation>();
     public DbSet<MoveIn> MoveIns => Set<MoveIn>();
     public DbSet<MoveOut> MoveOuts => Set<MoveOut>();
+    public DbSet<AccommodationOutboxMessage> OutboxMessages => Set<AccommodationOutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        var message = modelBuilder.Entity<AccommodationOutboxMessage>();
+        message.Property(item => item.Type).HasMaxLength(100);
+        message.Property(item => item.Sequence).UseIdentityColumn();
+        message.HasIndex(item => item.Sequence).IsUnique();
+        message.HasIndex(item => new { item.AccommodationId, item.Type }).IsUnique();
+        message.HasIndex(item => new { item.PublishedAtUtc, item.Sequence });
+        message.HasOne<StudentAccommodation>().WithMany()
+            .HasForeignKey(item => item.AccommodationId).OnDelete(DeleteBehavior.Restrict);
+
         var dorm = modelBuilder.Entity<Dorm>();
         dorm.Property(item => item.Name).HasMaxLength(200);
         dorm.Property(item => item.Address).HasMaxLength(250);

@@ -365,12 +365,71 @@ public sealed class AssignmentTests
         }
     }
 
+    [Test]
+    public async Task SuccessfulLifecycleCreatesOneOutboxEventForEachTransition()
+    {
+        var message = Event();
+        await service.ReceiveEligibilityAsync(message, default);
+        var assigned = await service.AssignAsync(new(message.EligibilityId, store.Room.Id), staffId, default);
+        await service.MoveInAsync(assigned.Id,
+            new MoveInRequest { MedicalCertificateReference = "PRIVATE-CERT" }, staffId, default);
+        await service.MoveOutAsync(assigned.Id,
+            new MoveOutRequest { Reason = "PRIVATE-REASON" }, staffId, default);
+
+        Assert.That(store.Events.Select(item => item.Type), Is.EqualTo(new[]
+        {
+            "AccommodationAssigned", "StudentMovedIn", "StudentMovedOut"
+        }));
+        foreach (var item in store.Events)
+        {
+            var payload = System.Text.Json.JsonSerializer.Deserialize<AccommodationLifecycleEvent>(item.Payload)!;
+            Assert.That(payload.EventId, Is.EqualTo(item.Id));
+            Assert.That(payload.AccommodationId, Is.EqualTo(assigned.Id));
+            Assert.That(payload.StudentId, Is.EqualTo(message.StudentId));
+            Assert.That(payload.RoomId, Is.EqualTo(store.Room.Id));
+            Assert.That(payload.AcademicYear, Is.EqualTo(message.AcademicYear));
+            Assert.That(payload.OccurredAtUtc.Kind, Is.EqualTo(DateTimeKind.Utc));
+            Assert.That(item.PublishedAtUtc, Is.Null);
+            Assert.That(item.Payload, Does.Not.Contain("PRIVATE"));
+        }
+
+        Assert.ThrowsAsync<AccommodationConflictException>(() => service.MoveOutAsync(assigned.Id,
+            new MoveOutRequest { Reason = "Ponovo" }, staffId, default));
+        Assert.That(store.Events, Has.Count.EqualTo(3));
+    }
+
+    [Test]
+    public async Task CancellationEmitsAnEventButRejectedActionsDoNot()
+    {
+        Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            service.AssignAsync(new(Guid.NewGuid(), store.Room.Id), staffId, default));
+        Assert.That(store.Events, Is.Empty);
+        var message = Event();
+        await service.ReceiveEligibilityAsync(message, default);
+        var assigned = await service.AssignAsync(new(message.EligibilityId, store.Room.Id), staffId, default);
+        Assert.ThrowsAsync<ArgumentException>(() => service.MoveInAsync(assigned.Id,
+            new MoveInRequest { MedicalCertificateReference = "" }, staffId, default));
+        Assert.That(store.Events, Has.Count.EqualTo(1));
+        await service.CancelAsync(assigned.Id, "Odustao", staffId, default);
+        Assert.That(store.Events.Last().Type, Is.EqualTo("AccommodationAssignmentCancelled"));
+        Assert.ThrowsAsync<AccommodationConflictException>(() =>
+            service.CancelAsync(assigned.Id, "Ponovo", staffId, default));
+        Assert.That(store.Events, Has.Count.EqualTo(2));
+    }
+
     private sealed class Store : IAssignmentRepository, IInventoryRepository
     {
         public Dorm Dorm { get; } = new("Dom", "Adresa", "Grad", "I", 10);
         public Room Room { get; }
         public List<ReceivedEligibility> Eligibilities { get; } = [];
         public List<StudentAccommodation> Assignments { get; } = [];
+        public List<AccommodationOutboxMessage> Events { get; } = [];
+
+        public Task AddEventAsync(AccommodationOutboxMessage message, CancellationToken ct)
+        {
+            Events.Add(message);
+            return Task.CompletedTask;
+        }
 
         public Store()
         {

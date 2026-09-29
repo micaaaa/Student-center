@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StudentCenter.AccommodationService.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using StudentCenter.AccommodationService.Infrastructure.Persistence;
 namespace StudentCenter.AccommodationService.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AccommodationDbContext))]
-    partial class AccommodationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260929173704_AddAccommodationOutbox")]
+    partial class AddAccommodationOutbox
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

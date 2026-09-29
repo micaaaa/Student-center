@@ -63,6 +63,8 @@ builder.Services.AddHttpClient<ICurrentStudentClient, CurrentStudentClient>(clie
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.Configure<RabbitOptions>(builder.Configuration.GetSection("RabbitMQ"));
 builder.Services.AddHostedService<EligibilityConsumer>();
+builder.Services.AddScoped<IAccommodationOutboxRepository, AccommodationOutboxRepository>();
+builder.Services.AddHostedService<AccommodationOutboxWorker>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

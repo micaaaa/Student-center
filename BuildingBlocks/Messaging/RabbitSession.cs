@@ -12,6 +12,23 @@ public sealed class RabbitSession(IConnection connection, IChannel channel) : IA
 
     public IChannel Channel { get; } = channel;
 
+    public async Task DeclareAccommodationQueuesAsync(CancellationToken ct)
+    {
+        // Durable subscriptions retain events until the downstream services are running.
+        foreach (var queue in new[] { "billing.accommodation", "notification.accommodation" })
+        {
+            await Channel.QueueDeclareAsync(queue, durable: true, exclusive: false,
+                autoDelete: false, cancellationToken: ct);
+            foreach (var eventType in new[]
+            {
+                "AccommodationAssigned", "StudentMovedIn", "StudentMovedOut", "AccommodationAssignmentCancelled"
+            })
+            {
+                await Channel.QueueBindAsync(queue, Exchange, eventType, cancellationToken: ct);
+            }
+        }
+    }
+
     public static async Task<RabbitSession> OpenAsync(RabbitOptions options, CancellationToken ct)
     {
         options.Validate();

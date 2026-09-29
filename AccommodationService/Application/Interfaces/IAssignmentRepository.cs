@@ -12,4 +12,5 @@ public interface IAssignmentRepository
     Task<StudentAccommodation?> GetAssignmentAsync(Guid id, CancellationToken ct);
     Task<IReadOnlyCollection<StudentAccommodation>> GetHistoryAsync(Guid studentId, CancellationToken ct);
     Task AddAssignmentAsync(StudentAccommodation assignment, CancellationToken ct);
+    Task AddEventAsync(AccommodationOutboxMessage message, CancellationToken ct);
 }

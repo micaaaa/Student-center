@@ -57,6 +57,7 @@ public sealed class AssignmentService(
                 eligibility, room.Id, staffId, clock.GetUtcNow().UtcDateTime);
             room.ReserveBed();
             await assignments.AddAssignmentAsync(assignment, token);
+            await assignments.AddEventAsync(AccommodationOutboxMessage.From(assignment), token);
             await inventory.SaveAsync(token);
             return Map(assignment);
         }, ct);
@@ -70,6 +71,7 @@ public sealed class AssignmentService(
                 ?? throw new KeyNotFoundException("Room was not found.");
             assignment.Cancel(staffId, reason, clock.GetUtcNow().UtcDateTime);
             room.ReleaseBed();
+            await assignments.AddEventAsync(AccommodationOutboxMessage.From(assignment), token);
             await inventory.SaveAsync(token);
             return Map(assignment);
         }, ct);
@@ -81,6 +83,7 @@ public sealed class AssignmentService(
             var assignment = await FindAsync(id, token);
             assignment.RecordMoveIn(staffId, request.MedicalCertificateReference, clock.GetUtcNow().UtcDateTime);
             // The bed was already reserved when the room was assigned.
+            await assignments.AddEventAsync(AccommodationOutboxMessage.From(assignment), token);
             await inventory.SaveAsync(token);
             return Map(assignment);
         }, ct);
@@ -94,6 +97,7 @@ public sealed class AssignmentService(
                 ?? throw new KeyNotFoundException("Room was not found.");
             assignment.RecordMoveOut(staffId, request.Reason, clock.GetUtcNow().UtcDateTime);
             room.ReleaseBed();
+            await assignments.AddEventAsync(AccommodationOutboxMessage.From(assignment), token);
             await inventory.SaveAsync(token);
             return Map(assignment);
         }, ct);

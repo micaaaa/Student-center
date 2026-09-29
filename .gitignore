@@ -15,3 +15,4 @@ appsettings.Development.json
 # Private uploaded documents
 App_Data/
 /.editorconfig
+/scripts

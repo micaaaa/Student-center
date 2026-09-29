@@ -267,7 +267,7 @@ public sealed class InventoryTests
             Is.EquivalentTo(new[]
             {
                 typeof(Dorm), typeof(Room), typeof(ReceivedEligibility),
-                typeof(StudentAccommodation), typeof(MoveIn), typeof(MoveOut)
+                typeof(StudentAccommodation), typeof(MoveIn), typeof(MoveOut), typeof(AccommodationOutboxMessage)
             }));
     }
 

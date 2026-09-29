@@ -7,6 +7,11 @@ namespace StudentCenter.AccommodationService.Infrastructure.Repositories;
 
 public sealed class AssignmentRepository(AccommodationDbContext db) : IAssignmentRepository
 {
+    public async Task AddEventAsync(AccommodationOutboxMessage message, CancellationToken ct)
+    {
+        await db.OutboxMessages.AddAsync(message, ct);
+    }
+
     public Task<ReceivedEligibility?> GetEligibilityAsync(Guid id, CancellationToken ct) =>
         db.ReceivedEligibilities.SingleOrDefaultAsync(item => item.Id == id, ct);
 
