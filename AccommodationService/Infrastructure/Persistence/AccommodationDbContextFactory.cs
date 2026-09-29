@@ -1,0 +1,28 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
+
+namespace StudentCenter.AccommodationService.Infrastructure.Persistence;
+
+// Migration tooling creates only a context; it does not start the API or apply migrations.
+public sealed class AccommodationDbContextFactory : IDesignTimeDbContextFactory<AccommodationDbContext>
+{
+    public AccommodationDbContext CreateDbContext(string[] args)
+    {
+        var directory = Directory.GetCurrentDirectory();
+        if (!File.Exists(Path.Combine(directory, "AccommodationService.csproj")))
+            directory = Path.Combine(directory, "AccommodationService");
+
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(directory)
+            .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddEnvironmentVariables()
+            .Build();
+        var connectionString = configuration.GetConnectionString("AccommodationDb");
+        if (string.IsNullOrWhiteSpace(connectionString))
+            connectionString = "Server=.\\SQLEXPRESS;Database=StudentCenter.AccommodationDb;Trusted_Connection=True;Encrypt=False";
+
+        return new AccommodationDbContext(new DbContextOptionsBuilder<AccommodationDbContext>()
+            .UseSqlServer(connectionString).Options);
+    }
+}

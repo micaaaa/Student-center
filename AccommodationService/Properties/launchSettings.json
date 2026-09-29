@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "AccommodationService": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:49886;http://localhost:49887"
+    }
+  }
+}
