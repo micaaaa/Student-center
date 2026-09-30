@@ -11,9 +11,20 @@ public sealed class FoodDbContext(DbContextOptions<FoodDbContext> options) : DbC
     public DbSet<MealEntitlement> MealEntitlements => Set<MealEntitlement>();
     public DbSet<MealConsumption> MealConsumptions => Set<MealConsumption>();
     public DbSet<MealPurchase> MealPurchases => Set<MealPurchase>();
+    public DbSet<FoodOutboxMessage> OutboxMessages => Set<FoodOutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        var messages = modelBuilder.Entity<FoodOutboxMessage>();
+        messages.HasKey(message => message.Id);
+        messages.Property(message => message.Type).HasMaxLength(100);
+        messages.Property(message => message.Sequence).UseIdentityColumn();
+        messages.HasIndex(message => message.Sequence).IsUnique();
+        messages.HasIndex(message => new { message.PurchaseId, message.Type }).IsUnique();
+        messages.HasIndex(message => new { message.PublishedAtUtc, message.Sequence });
+        messages.HasOne<MealPurchase>().WithMany().HasForeignKey(message => message.PurchaseId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         var restaurants = modelBuilder.Entity<Restaurant>();
         restaurants.HasKey(restaurant => restaurant.Id);
         restaurants.Property(restaurant => restaurant.Name).HasMaxLength(200).IsRequired();

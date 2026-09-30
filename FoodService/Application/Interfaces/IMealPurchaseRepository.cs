@@ -10,6 +10,7 @@ public interface IMealPurchaseRepository
     Task<IReadOnlyCollection<MealPurchase>> GetHistoryAsync(
         Guid studentId, int year, int month, int page, int pageSize, CancellationToken ct);
     Task AddAsync(MealPurchase purchase, CancellationToken ct);
+    Task AddEventAsync(FoodOutboxMessage message, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);
     Task<T> InTransactionAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken ct);
 }

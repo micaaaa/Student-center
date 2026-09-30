@@ -118,6 +118,8 @@ public sealed class MealPurchaseTests
         Assert.That(replay.Purchase, Is.EqualTo(first.Purchase));
         Assert.That(repository.Entitlement.AllowedQuantity, Is.EqualTo(5));
         Assert.That(repository.Purchases, Has.Count.EqualTo(1));
+        Assert.That(repository.Events, Has.Count.EqualTo(1));
+        Assert.That(repository.Events.Single().PurchaseId, Is.EqualTo(first.Purchase.Id));
         Assert.That(repository.SaveCount, Is.EqualTo(1));
     }
 
@@ -256,6 +258,7 @@ public sealed class MealPurchaseTests
     {
         public MealEntitlement Entitlement { get; } = MealPurchaseTests.Entitlement();
         public List<MealPurchase> Purchases { get; } = [];
+        public List<FoodOutboxMessage> Events { get; } = [];
         public int SaveCount { get; private set; }
 
         public Task<MealEntitlement?> GetEntitlementAsync(Guid id, CancellationToken ct)
@@ -292,6 +295,12 @@ public sealed class MealPurchaseTests
         public Task SaveAsync(CancellationToken ct)
         {
             SaveCount++;
+            return Task.CompletedTask;
+        }
+
+        public Task AddEventAsync(FoodOutboxMessage message, CancellationToken ct)
+        {
+            Events.Add(message);
             return Task.CompletedTask;
         }
 

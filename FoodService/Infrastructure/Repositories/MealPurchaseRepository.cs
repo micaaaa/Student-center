@@ -46,6 +46,11 @@ public sealed class MealPurchaseRepository(FoodDbContext db) : IMealPurchaseRepo
         return db.SaveChangesAsync(ct);
     }
 
+    public async Task AddEventAsync(FoodOutboxMessage message, CancellationToken ct)
+    {
+        await db.OutboxMessages.AddAsync(message, ct);
+    }
+
     public async Task<T> InTransactionAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken ct)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);

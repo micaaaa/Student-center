@@ -30,6 +30,7 @@ public sealed class MealPurchaseService(
             var purchase = entitlement.Purchase(request.RequestId, request.Quantity, request.UnitPrice,
                 actorId, clock.GetUtcNow());
             await repository.AddAsync(purchase, token);
+            await repository.AddEventAsync(FoodOutboxMessage.From(purchase), token);
             await repository.SaveAsync(token);
             return new PurchaseResult(ToResponse(purchase), false);
         }, ct);

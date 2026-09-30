@@ -8,6 +8,8 @@ using StudentCenter.FoodService.Application.Services;
 using StudentCenter.FoodService.Infrastructure.Persistence;
 using StudentCenter.FoodService.Infrastructure.Repositories;
 using StudentCenter.FoodService.Infrastructure.ExternalServices;
+using StudentCenter.FoodService.Infrastructure.Messaging;
+using StudentCenter.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("FoodDb");
@@ -55,6 +57,9 @@ builder.Services.AddScoped<IMealUsageRepository, MealUsageRepository>();
 builder.Services.AddScoped<MealUsageService>();
 builder.Services.AddScoped<IMealPurchaseRepository, MealPurchaseRepository>();
 builder.Services.AddScoped<MealPurchaseService>();
+builder.Services.AddScoped<IFoodOutboxRepository, FoodOutboxRepository>();
+builder.Services.Configure<RabbitOptions>(builder.Configuration.GetSection("RabbitMQ"));
+builder.Services.AddHostedService<FoodOutboxWorker>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<IFoodStudentClient, FoodStudentClient>(client =>
