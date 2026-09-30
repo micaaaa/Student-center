@@ -8,6 +8,8 @@ public sealed class FoodDbContext(DbContextOptions<FoodDbContext> options) : DbC
     public DbSet<Restaurant> Restaurants => Set<Restaurant>();
     public DbSet<Menu> Menus => Set<Menu>();
     public DbSet<Meal> Meals => Set<Meal>();
+    public DbSet<MealEntitlement> MealEntitlements => Set<MealEntitlement>();
+    public DbSet<MealConsumption> MealConsumptions => Set<MealConsumption>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,5 +39,38 @@ public sealed class FoodDbContext(DbContextOptions<FoodDbContext> options) : DbC
         meals.Property(meal => meal.Type).HasConversion<string>().HasMaxLength(20);
         meals.Property(meal => meal.Price).HasPrecision(10, 2);
         meals.ToTable(table => table.HasCheckConstraint("CK_Meals_Price", "[Price] >= 0"));
+
+        var entitlements = modelBuilder.Entity<MealEntitlement>();
+        entitlements.HasKey(entitlement => entitlement.Id);
+        entitlements.Property(entitlement => entitlement.AcademicYear).HasMaxLength(9).IsRequired();
+        entitlements.Property(entitlement => entitlement.MealType).HasConversion<string>().HasMaxLength(20);
+        entitlements.Property(entitlement => entitlement.Status).HasConversion<string>().HasMaxLength(20);
+        entitlements.Property(entitlement => entitlement.RowVersion).IsRowVersion();
+        entitlements.Ignore(entitlement => entitlement.RemainingQuantity);
+        entitlements.HasIndex(entitlement => new
+        {
+            entitlement.StudentId,
+            entitlement.Year,
+            entitlement.Month,
+            entitlement.MealType
+        }).IsUnique();
+        entitlements.ToTable(table =>
+        {
+            table.HasCheckConstraint("CK_MealEntitlements_Quantities",
+                "[AllowedQuantity] > 0 AND [ConsumedQuantity] >= 0 AND [ConsumedQuantity] <= [AllowedQuantity]");
+            table.HasCheckConstraint("CK_MealEntitlements_Period",
+                "[Year] BETWEEN 1 AND 9998 AND [Month] BETWEEN 1 AND 12");
+        });
+
+        var consumptions = modelBuilder.Entity<MealConsumption>();
+        consumptions.HasKey(consumption => consumption.Id);
+        consumptions.HasIndex(consumption => consumption.RequestId).IsUnique();
+        consumptions.HasIndex(consumption => new { consumption.StudentId, consumption.ConsumedAtUtc });
+        consumptions.Property(consumption => consumption.MealType).HasConversion<string>().HasMaxLength(20);
+        consumptions.Property(consumption => consumption.CardReference).HasMaxLength(100);
+        consumptions.HasOne<MealEntitlement>().WithMany().HasForeignKey(consumption => consumption.EntitlementId)
+            .OnDelete(DeleteBehavior.Restrict);
+        consumptions.HasOne<Restaurant>().WithMany().HasForeignKey(consumption => consumption.RestaurantId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

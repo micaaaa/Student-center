@@ -7,6 +7,7 @@ using StudentCenter.FoodService.Application.Interfaces;
 using StudentCenter.FoodService.Application.Services;
 using StudentCenter.FoodService.Infrastructure.Persistence;
 using StudentCenter.FoodService.Infrastructure.Repositories;
+using StudentCenter.FoodService.Infrastructure.ExternalServices;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("FoodDb");
@@ -50,6 +51,16 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<FoodDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddScoped<IFoodCatalogRepository, FoodCatalogRepository>();
 builder.Services.AddScoped<FoodCatalogService>();
+builder.Services.AddScoped<IMealUsageRepository, MealUsageRepository>();
+builder.Services.AddScoped<MealUsageService>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient<IFoodStudentClient, FoodStudentClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:StudentServiceUrl"]
+        ?? "https://localhost:49686/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

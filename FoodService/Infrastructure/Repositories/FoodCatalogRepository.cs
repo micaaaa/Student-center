@@ -86,5 +86,12 @@ public sealed class FoodCatalogRepository(FoodDbContext db) : IFoodCatalogReposi
         {
             throw new FoodConflictException("The catalog changed concurrently. Reload before retrying.");
         }
+        catch (InvalidOperationException exception) when (
+            exception.InnerException is SqlException { Number: 1205 }
+            or DbUpdateException { InnerException: SqlException { Number: 1205 } })
+        {
+            // EF may wrap a SQL deadlock as a transient execution-strategy failure.
+            throw new FoodConflictException("The catalog changed concurrently. Reload before retrying.");
+        }
     }
 }
