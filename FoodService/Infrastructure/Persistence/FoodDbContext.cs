@@ -10,6 +10,7 @@ public sealed class FoodDbContext(DbContextOptions<FoodDbContext> options) : DbC
     public DbSet<Meal> Meals => Set<Meal>();
     public DbSet<MealEntitlement> MealEntitlements => Set<MealEntitlement>();
     public DbSet<MealConsumption> MealConsumptions => Set<MealConsumption>();
+    public DbSet<MealPurchase> MealPurchases => Set<MealPurchase>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -72,5 +73,18 @@ public sealed class FoodDbContext(DbContextOptions<FoodDbContext> options) : DbC
             .OnDelete(DeleteBehavior.Restrict);
         consumptions.HasOne<Restaurant>().WithMany().HasForeignKey(consumption => consumption.RestaurantId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        var purchases = modelBuilder.Entity<MealPurchase>();
+        purchases.HasKey(purchase => purchase.Id);
+        purchases.HasIndex(purchase => purchase.RequestId).IsUnique();
+        purchases.HasIndex(purchase => new { purchase.StudentId, purchase.Year, purchase.Month, purchase.PurchasedAtUtc });
+        purchases.Property(purchase => purchase.AcademicYear).HasMaxLength(9).IsRequired();
+        purchases.Property(purchase => purchase.MealType).HasConversion<string>().HasMaxLength(20);
+        purchases.Property(purchase => purchase.UnitPrice).HasPrecision(10, 2);
+        purchases.Property(purchase => purchase.Amount).HasPrecision(18, 2);
+        purchases.HasOne<MealEntitlement>().WithMany().HasForeignKey(purchase => purchase.EntitlementId)
+            .OnDelete(DeleteBehavior.Restrict);
+        purchases.ToTable(table => table.HasCheckConstraint("CK_MealPurchases_Amount",
+            "[Quantity] > 0 AND [UnitPrice] > 0 AND [Amount] = [Quantity] * [UnitPrice]"));
     }
 }

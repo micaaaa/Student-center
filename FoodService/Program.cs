@@ -53,6 +53,8 @@ builder.Services.AddScoped<IFoodCatalogRepository, FoodCatalogRepository>();
 builder.Services.AddScoped<FoodCatalogService>();
 builder.Services.AddScoped<IMealUsageRepository, MealUsageRepository>();
 builder.Services.AddScoped<MealUsageService>();
+builder.Services.AddScoped<IMealPurchaseRepository, MealPurchaseRepository>();
+builder.Services.AddScoped<MealPurchaseService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<IFoodStudentClient, FoodStudentClient>(client =>

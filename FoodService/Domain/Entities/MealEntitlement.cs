@@ -123,6 +123,25 @@ public sealed class MealEntitlement
         return consumption;
     }
 
+    public MealPurchase Purchase(Guid requestId, int quantity, decimal unitPrice, Guid actorId, DateTimeOffset now)
+    {
+        var purchase = new MealPurchase(requestId, this, quantity, unitPrice, actorId, now);
+        if (GetStatus(now) != MealEntitlementStatus.Active)
+        {
+            throw new FoodConflictException("Purchases require an active, unexpired meal entitlement.");
+        }
+
+        if ((long)AllowedQuantity + quantity > int.MaxValue)
+        {
+            throw new ArgumentException("Purchased quantity exceeds the supported entitlement limit.");
+        }
+
+        AllowedQuantity += quantity;
+        UpdatedByUserId = actorId;
+        UpdatedAtUtc = now.UtcDateTime;
+        return purchase;
+    }
+
     public static void ValidatePeriod(int year, int month)
     {
         if (year is < 1 or > 9998 || month is < 1 or > 12)
