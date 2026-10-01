@@ -51,6 +51,13 @@ public sealed class MaintenanceRequest
     public DateTime? ReviewedAtUtc { get; private set; }
     public string? RejectionReason { get; private set; }
     public DateTime? CancelledAtUtc { get; private set; }
+    public Guid? AssignedWorkerId { get; private set; }
+    public Guid? AssignedByUserId { get; private set; }
+    public DateTime? AssignedAtUtc { get; private set; }
+    public DateTime? StartedAtUtc { get; private set; }
+    public DateTime? ResolvedAtUtc { get; private set; }
+    public Guid? ResolvedByUserId { get; private set; }
+    public string? ResolutionDescription { get; private set; }
     public byte[] RowVersion { get; private set; } = [];
 
     public void Accept(Guid actorId, DateTimeOffset now)
@@ -85,7 +92,7 @@ public sealed class MaintenanceRequest
 
     public void ChangePriority(RequestPriority priority, DateTimeOffset now)
     {
-        if (Status is RequestStatus.Rejected or RequestStatus.Cancelled)
+        if (Status is RequestStatus.Rejected or RequestStatus.Cancelled or RequestStatus.Resolved)
         {
             throw new MaintenanceConflictException("Closed requests cannot be changed.");
         }
@@ -93,6 +100,75 @@ public sealed class MaintenanceRequest
         ValidatePriority(priority);
         Priority = priority;
         UpdatedAtUtc = now.UtcDateTime;
+    }
+
+    public MaintenanceAction Assign(MaintenanceWorker worker, Guid actorId, DateTimeOffset now)
+    {
+        ValidateActor(actorId);
+        if (Status is not (RequestStatus.Accepted or RequestStatus.Assigned or RequestStatus.InProgress))
+        {
+            throw new MaintenanceConflictException("Only accepted or ongoing requests can be assigned.");
+        }
+
+        if (!worker.IsActive || AssignedWorkerId == worker.Id)
+        {
+            throw new MaintenanceConflictException("Choose an active worker different from the current assignee.");
+        }
+
+        var action = new MaintenanceAction(Id, worker.Id, actorId, MaintenanceActionType.Assigned,
+            "Request assigned to worker.", now);
+        AssignedWorkerId = worker.Id;
+        AssignedByUserId = actorId;
+        AssignedAtUtc = now.UtcDateTime;
+        StartedAtUtc = null;
+        Status = RequestStatus.Assigned;
+        UpdatedAtUtc = now.UtcDateTime;
+        return action;
+    }
+
+    public MaintenanceAction Start(Guid actorId, DateTimeOffset now)
+    {
+        if (Status != RequestStatus.Assigned || !AssignedWorkerId.HasValue)
+        {
+            throw new MaintenanceConflictException("Only an assigned request can be started.");
+        }
+
+        var action = new MaintenanceAction(Id, AssignedWorkerId.Value, actorId,
+            MaintenanceActionType.Started, "Work started.", now);
+        Status = RequestStatus.InProgress;
+        StartedAtUtc = now.UtcDateTime;
+        UpdatedAtUtc = now.UtcDateTime;
+        return action;
+    }
+
+    public MaintenanceAction RecordIntervention(Guid actorId, string description, DateTimeOffset now)
+    {
+        EnsureInProgress();
+        var action = new MaintenanceAction(Id, AssignedWorkerId!.Value, actorId,
+            MaintenanceActionType.Intervention, description, now);
+        UpdatedAtUtc = now.UtcDateTime;
+        return action;
+    }
+
+    public MaintenanceAction Resolve(Guid actorId, string description, DateTimeOffset now)
+    {
+        EnsureInProgress();
+        var action = new MaintenanceAction(Id, AssignedWorkerId!.Value, actorId,
+            MaintenanceActionType.Resolved, description, now);
+        Status = RequestStatus.Resolved;
+        ResolutionDescription = action.Description;
+        ResolvedAtUtc = now.UtcDateTime;
+        ResolvedByUserId = actorId;
+        UpdatedAtUtc = now.UtcDateTime;
+        return action;
+    }
+
+    private void EnsureInProgress()
+    {
+        if (Status != RequestStatus.InProgress || !AssignedWorkerId.HasValue)
+        {
+            throw new MaintenanceConflictException("Interventions and resolution require work in progress.");
+        }
     }
 
     private void EnsureSubmitted()

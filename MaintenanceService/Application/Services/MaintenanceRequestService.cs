@@ -146,9 +146,7 @@ public sealed class MaintenanceRequestService(
 
     private static MaintenanceRequestResponse ToResponse(MaintenanceRequest request)
     {
-        return new MaintenanceRequestResponse(request.Id, request.StudentId, request.AccommodationId,
-            request.RoomId, request.CategoryId, request.Title, request.Description, request.Priority, request.Status,
-            request.CreatedAtUtc, request.UpdatedAtUtc, request.ReviewedAtUtc, request.RejectionReason, request.CancelledAtUtc);
+        return MaintenanceRequestResponse.From(request);
     }
 }
 

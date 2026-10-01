@@ -51,6 +51,13 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<MaintenanceDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddScoped<IMaintenanceRepository, MaintenanceRepository>();
 builder.Services.AddScoped<MaintenanceRequestService>();
+builder.Services.AddScoped<IWorkRepository, WorkRepository>();
+builder.Services.AddScoped<MaintenanceWorkService>();
+builder.Services.AddHttpClient<IStaffDirectoryClient, StaffDirectoryClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:IdentityServiceUrl"] ?? "https://localhost:49586/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddScoped<ICurrentStudentContext, CurrentStudentContext>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddHttpContextAccessor();

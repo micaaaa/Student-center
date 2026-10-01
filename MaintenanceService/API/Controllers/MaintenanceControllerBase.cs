@@ -28,5 +28,9 @@ public abstract class MaintenanceControllerBase : ControllerBase
         {
             return StatusCode(exception.StatusCode, new { message = exception.Message });
         }
+        catch (MaintenanceAccessException exception)
+        {
+            return StatusCode(403, new { message = exception.Message });
+        }
     }
 }
