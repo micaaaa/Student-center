@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "MaintenanceService": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:50086;http://localhost:50087"
+    }
+  }
+}
+
+
