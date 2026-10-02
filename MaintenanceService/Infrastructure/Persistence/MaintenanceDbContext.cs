@@ -9,9 +9,21 @@ public sealed class MaintenanceDbContext(DbContextOptions<MaintenanceDbContext> 
     public DbSet<MaintenanceRequest> Requests => Set<MaintenanceRequest>();
     public DbSet<MaintenanceWorker> Workers => Set<MaintenanceWorker>();
     public DbSet<MaintenanceAction> Actions => Set<MaintenanceAction>();
+    public DbSet<MaintenanceOutboxMessage> OutboxMessages => Set<MaintenanceOutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        var outbox = modelBuilder.Entity<MaintenanceOutboxMessage>();
+        outbox.HasKey(message => message.Id);
+        outbox.Property(message => message.Sequence).UseIdentityColumn();
+        outbox.HasIndex(message => message.Sequence).IsUnique();
+        outbox.HasIndex(message => message.ActionId).IsUnique();
+        outbox.HasIndex(message => new { message.PublishedAtUtc, message.Sequence });
+        outbox.Property(message => message.Type).HasMaxLength(100).IsRequired();
+        outbox.Property(message => message.Payload).IsRequired();
+        outbox.HasOne<MaintenanceAction>().WithMany().HasForeignKey(message => message.ActionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         var categories = modelBuilder.Entity<MaintenanceCategory>();
         categories.HasKey(category => category.Id);
         categories.Property(category => category.Name).HasMaxLength(100).IsRequired();

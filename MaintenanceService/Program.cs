@@ -8,6 +8,8 @@ using StudentCenter.MaintenanceService.Application.Services;
 using StudentCenter.MaintenanceService.Infrastructure.Persistence;
 using StudentCenter.MaintenanceService.Infrastructure.Repositories;
 using StudentCenter.MaintenanceService.Infrastructure.ExternalServices;
+using StudentCenter.MaintenanceService.Infrastructure.Messaging;
+using StudentCenter.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("MaintenanceDb");
@@ -53,6 +55,9 @@ builder.Services.AddScoped<IMaintenanceRepository, MaintenanceRepository>();
 builder.Services.AddScoped<MaintenanceRequestService>();
 builder.Services.AddScoped<IWorkRepository, WorkRepository>();
 builder.Services.AddScoped<MaintenanceWorkService>();
+builder.Services.AddScoped<IMaintenanceOutboxRepository, MaintenanceOutboxRepository>();
+builder.Services.Configure<RabbitOptions>(builder.Configuration.GetSection("RabbitMQ"));
+builder.Services.AddHostedService<MaintenanceOutboxWorker>();
 builder.Services.AddHttpClient<IStaffDirectoryClient, StaffDirectoryClient>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["Services:IdentityServiceUrl"] ?? "https://localhost:49586/");

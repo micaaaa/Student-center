@@ -62,6 +62,14 @@ public sealed class WorkRepository(MaintenanceDbContext db) : IWorkRepository
     public async Task AddActionAsync(MaintenanceAction action, CancellationToken ct)
     {
         await db.Actions.AddAsync(action, ct);
+        if (action.Type is MaintenanceActionType.Assigned or MaintenanceActionType.Resolved)
+        {
+            var request = await db.Requests.FindAsync(new object[] { action.RequestId }, ct)
+                ?? throw new KeyNotFoundException("Maintenance request not found.");
+            var worker = await db.Workers.FindAsync(new object[] { action.WorkerId }, ct)
+                ?? throw new KeyNotFoundException("Worker not found.");
+            await db.OutboxMessages.AddAsync(MaintenanceOutboxMessage.From(action, request, worker), ct);
+        }
     }
 
     public Task SaveAsync(CancellationToken ct)
