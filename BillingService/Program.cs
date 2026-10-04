@@ -54,6 +54,8 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddDbContext<BillingDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddScoped<IBillingRepository, BillingRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<StudentCenter.BillingService.Application.Services.PaymentService>();
 builder.Services.AddScoped<StudentCenter.BillingService.Application.Services.ChargeService>();
 builder.Services.Configure<RabbitOptions>(builder.Configuration.GetSection("RabbitMQ"));
 builder.Services.AddHostedService<BillingConsumer>();

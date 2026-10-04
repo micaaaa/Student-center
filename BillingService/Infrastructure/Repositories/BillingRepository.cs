@@ -135,7 +135,7 @@ public sealed class BillingRepository(BillingDbContext db) : IBillingRepository
         DateOnly today, int page, int pageSize, CancellationToken ct)
     {
         return await db.Charges.AsNoTracking().Where(charge => charge.StudentId == studentId
-                && (!overdueOnly || charge.DueDate < today))
+                && (!overdueOnly || charge.DueDate < today && charge.PaidAmount < charge.Amount))
             .OrderByDescending(charge => charge.CreatedAtUtc).ThenByDescending(charge => charge.Id)
             .Skip((page - 1) * pageSize).Take(pageSize).ToArrayAsync(ct);
     }
@@ -147,10 +147,13 @@ public sealed class BillingRepository(BillingDbContext db) : IBillingRepository
             .Select(group => new
             {
                 Count = group.Count(),
-                Outstanding = group.Sum(charge => charge.Amount),
-                Overdue = group.Sum(charge => charge.DueDate < today ? charge.Amount : 0m)
+                TotalCharged = group.Sum(charge => charge.Amount),
+                TotalPaid = group.Sum(charge => charge.PaidAmount),
+                Outstanding = group.Sum(charge => charge.Amount - charge.PaidAmount),
+                Overdue = group.Sum(charge => charge.DueDate < today ? charge.Amount - charge.PaidAmount : 0m)
             }).SingleOrDefaultAsync(ct);
-        return new BalanceResponse("RSD", totals?.Count ?? 0, totals?.Outstanding ?? 0m, totals?.Overdue ?? 0m);
+        return new BalanceResponse("RSD", totals?.Count ?? 0, totals?.Outstanding ?? 0m, totals?.Overdue ?? 0m,
+            totals?.TotalCharged ?? 0m, totals?.TotalPaid ?? 0m);
     }
 
     private static void EnsureSameEvent(ReceivedEvent existing, IncomingBillingEvent message)

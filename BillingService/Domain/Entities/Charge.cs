@@ -1,4 +1,5 @@
 using StudentCenter.BillingService.Domain.Enums;
+using StudentCenter.BillingService.Domain.Exceptions;
 
 namespace StudentCenter.BillingService.Domain.Entities;
 
@@ -56,10 +57,42 @@ public sealed class Charge
     public Guid? RecordedByUserId { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
     public string? Period { get; private set; }
+    public decimal PaidAmount { get; private set; }
+    public decimal OutstandingAmount => Amount - PaidAmount;
+    public DateTime? PaidAtUtc { get; private set; }
+    public byte[] RowVersion { get; private set; } = [];
+
+    public Payment RecordPayment(Guid requestId, decimal amount, PaymentMethod method,
+        string? referenceNumber, Guid actorId, DateTimeOffset now)
+    {
+        var payment = new Payment(requestId, this, amount, method, referenceNumber, actorId, now);
+        if (amount > OutstandingAmount)
+        {
+            throw new BillingConflictException("Payment cannot exceed the remaining charge amount.");
+        }
+
+        PaidAmount += amount;
+        if (PaidAmount == Amount)
+        {
+            PaidAtUtc = now.UtcDateTime;
+        }
+
+        return payment;
+    }
 
     public string Status(DateOnly today)
     {
-        return DueDate < today ? "OVERDUE" : "PENDING";
+        if (PaidAmount == Amount)
+        {
+            return "PAID";
+        }
+
+        if (DueDate < today)
+        {
+            return "OVERDUE";
+        }
+
+        return PaidAmount > 0 ? "PARTIALLY_PAID" : "PENDING";
     }
 
     public static void ValidateAmount(decimal amount)
