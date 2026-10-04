@@ -14,7 +14,7 @@ public sealed class NotificationConsumer(
     public const string RejectedQueue = "notification.rejected";
     private static readonly string[] Queues =
     [
-        "notification.accommodation", "notification.food", "notification.maintenance"
+        "notification.accommodation", "notification.food", "notification.maintenance", "notification.billing"
     ];
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -32,6 +32,7 @@ public sealed class NotificationConsumer(
                 await session.DeclareAccommodationQueuesAsync(stoppingToken);
                 await session.DeclareFoodQueuesAsync(stoppingToken);
                 await session.DeclareMaintenanceQueuesAsync(stoppingToken);
+                await session.DeclareBillingQueuesAsync(stoppingToken);
                 await session.Channel.QueueDeclareAsync(RejectedQueue, durable: true, exclusive: false,
                     autoDelete: false, cancellationToken: stoppingToken);
                 while (!stoppingToken.IsCancellationRequested)
