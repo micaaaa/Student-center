@@ -59,6 +59,8 @@ builder.Services.AddScoped<StudentCenter.BillingService.Application.Services.Pay
 builder.Services.AddScoped<StudentCenter.BillingService.Application.Services.ChargeService>();
 builder.Services.Configure<RabbitOptions>(builder.Configuration.GetSection("RabbitMQ"));
 builder.Services.AddHostedService<BillingConsumer>();
+builder.Services.AddScoped<IBillingOutboxRepository, BillingOutboxRepository>();
+builder.Services.AddHostedService<BillingOutboxWorker>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<IBillingStudentClient, BillingStudentClient>(client =>

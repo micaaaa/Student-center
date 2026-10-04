@@ -23,6 +23,9 @@ public sealed class PaymentRepository(BillingDbContext db) : IPaymentRepository
     public async Task AddAsync(Payment payment, CancellationToken ct)
     {
         await db.Payments.AddAsync(payment, ct);
+        var charge = await db.Charges.FindAsync(new object[] { payment.ChargeId }, ct)
+            ?? throw new KeyNotFoundException("Charge not found.");
+        await db.OutboxMessages.AddRangeAsync(BillingOutboxMessage.ForPayment(payment, charge), ct);
     }
 
     public Task SaveAsync(CancellationToken ct)

@@ -7,11 +7,23 @@ public sealed class BillingDbContext(DbContextOptions<BillingDbContext> options)
 {
     public DbSet<Charge> Charges => Set<Charge>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<BillingOutboxMessage> OutboxMessages => Set<BillingOutboxMessage>();
     public DbSet<ReceivedEvent> ReceivedEvents => Set<ReceivedEvent>();
     public DbSet<AccommodationReference> AccommodationReferences => Set<AccommodationReference>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        var outbox = modelBuilder.Entity<BillingOutboxMessage>();
+        outbox.HasKey(message => message.Id);
+        outbox.Property(message => message.Sequence).UseIdentityColumn();
+        outbox.HasIndex(message => message.Sequence).IsUnique();
+        outbox.HasIndex(message => new { message.Type, message.SourceId }).IsUnique();
+        outbox.HasIndex(message => new { message.PublishedAtUtc, message.Sequence });
+        outbox.Property(message => message.Type).HasMaxLength(100).IsRequired();
+        outbox.Property(message => message.Payload).IsRequired();
+        outbox.HasOne<Charge>().WithMany().HasForeignKey(message => message.ChargeId).OnDelete(DeleteBehavior.Restrict);
+        outbox.HasOne<Payment>().WithMany().HasForeignKey(message => message.PaymentId).OnDelete(DeleteBehavior.Restrict);
+
         var charges = modelBuilder.Entity<Charge>();
         charges.HasKey(charge => charge.Id);
         charges.Property(charge => charge.Type).HasConversion<string>().HasMaxLength(20).IsRequired();

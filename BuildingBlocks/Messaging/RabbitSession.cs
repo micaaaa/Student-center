@@ -12,6 +12,17 @@ public sealed class RabbitSession(IConnection connection, IChannel channel) : IA
 
     public IChannel Channel { get; } = channel;
 
+    public async Task DeclareBillingQueuesAsync(CancellationToken ct)
+    {
+        const string queue = "notification.billing";
+        await Channel.QueueDeclareAsync(queue, durable: true, exclusive: false,
+            autoDelete: false, cancellationToken: ct);
+        foreach (var eventType in new[] { "ChargeCreated", "PaymentRecorded", "ChargePaid" })
+        {
+            await Channel.QueueBindAsync(queue, Exchange, eventType, cancellationToken: ct);
+        }
+    }
+
     public async Task DeclareMaintenanceQueuesAsync(CancellationToken ct)
     {
         const string queue = "notification.maintenance";

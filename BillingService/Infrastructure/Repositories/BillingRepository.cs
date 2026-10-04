@@ -103,6 +103,7 @@ public sealed class BillingRepository(BillingDbContext db) : IBillingRepository
             }
 
             db.Charges.Add(charge);
+            db.OutboxMessages.Add(BillingOutboxMessage.ForCharge(charge));
             await db.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
             return charge;
