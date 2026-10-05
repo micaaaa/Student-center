@@ -71,9 +71,14 @@ export function Layout() {
                 <nav aria-label="Main navigation">
                     {['STAFF', 'ADMIN'].includes(user.role) &&
                         user.permissions.includes('ManageApplications') && (
-                            <NavLink to="/staff/applications" onClick={() => setOpen(false)}>
-                                <Files size={19} /> Application review
-                            </NavLink>
+                            <>
+                                <NavLink to="/staff/applications" onClick={() => setOpen(false)}>
+                                    <Files size={19} /> Application review
+                                </NavLink>
+                                <NavLink to="/staff/rankings" onClick={() => setOpen(false)}>
+                                    <CalendarDays size={19} /> Rankings and appeals
+                                </NavLink>
+                            </>
                         )}
                     <NavLink to="/" end onClick={() => setOpen(false)}>
                         <LayoutDashboard size={19} /> Overview

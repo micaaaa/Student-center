@@ -66,6 +66,24 @@ const translations: Record<string, string> = {
 };
 
 const applicationMessages = new Set([
+    'The preliminary ranking has already been published.',
+    'The final ranking has already been published.',
+    'Ranking data has changed. Generate the draft again.',
+    'Final ranking data changed. Generate the draft again.',
+    'Close the competition before generating or publishing its ranking.',
+    'There are no active submitted applications to rank.',
+    'Publish a preliminary ranking first.',
+    'Available places and the appeal deadline are required.',
+    'Only a closed competition can be configured for conclusion.',
+    'The initial appeal deadline must be in the future.',
+    'An announced appeal deadline cannot be shortened.',
+    'Configure the closed competition and wait for its appeal deadline before final ranking.',
+    'All appeals must be resolved before final ranking.',
+    'A tied group crosses the capacity boundary. Adjust capacity to include or exclude the entire group.',
+    'Review documentation and recalculate current points after the appeal before accepting it.',
+    'Only a submitted appeal can enter review.',
+    'Only an appeal under review can be resolved.',
+    'An appeal response of at most 4000 characters is required.',
     'Submitted application was not found.',
     'Only a submitted application can enter review.',
     'Start application review before reviewing documents.',
@@ -133,6 +151,13 @@ async function send<T>(path: string, options: RequestOptions = {}, token?: strin
         const body = await response.json().catch(() => null);
         const message =
             translations[body?.message] ||
+            (response.status === 409 &&
+            typeof body?.message === 'string' &&
+            /^Application [0-9a-f-]{36} requires completed document review and current scoring\.$/i.test(
+                body.message,
+            )
+                ? body.message
+                : '') ||
             (response.status < 500 && applicationMessages.has(body?.message) ? body.message : '') ||
             (response.status === 401
                 ? 'Authentication failed. Check your credentials or sign in again.'

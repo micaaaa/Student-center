@@ -12,6 +12,8 @@ import { ApplicationResultsPage } from './pages/ApplicationResultsPage';
 import { RankingsPage } from './pages/RankingsPage';
 import { StaffApplicationsPage } from './pages/StaffApplicationsPage';
 import { StaffApplicationPage } from './pages/StaffApplicationPage';
+import { StaffRankingsPage } from './pages/StaffRankingsPage';
+import { StaffCompetitionResultsPage } from './pages/StaffCompetitionResultsPage';
 
 export default function App() {
     return (
@@ -34,6 +36,11 @@ export default function App() {
                                 <Route
                                     path="/staff/applications"
                                     element={<StaffApplicationsPage />}
+                                />
+                                <Route path="/staff/rankings" element={<StaffRankingsPage />} />
+                                <Route
+                                    path="/staff/rankings/:id"
+                                    element={<StaffCompetitionResultsPage />}
                                 />
                                 <Route
                                     path="/staff/applications/:id"

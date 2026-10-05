@@ -35,7 +35,7 @@ button,
 }
 button:disabled {
     opacity: 0.6;
-    cursor: wait;
+    cursor: not-allowed;
 }
 button:focus-visible,
 a:focus-visible {
@@ -134,7 +134,7 @@ label small {
     color: white;
     border: 1px solid var(--green);
 }
-.primary:hover {
+.primary:hover:not(:disabled) {
     background: #285348;
 }
 .secondary {
@@ -142,7 +142,7 @@ label small {
     color: var(--green);
     border: 1px solid #d9e1d8;
 }
-.secondary:hover {
+.secondary:hover:not(:disabled) {
     background: #edf2e9;
 }
 .full {
