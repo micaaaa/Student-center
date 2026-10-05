@@ -11,6 +11,7 @@
 appsettings.Development.local.json
 appsettings.Development.json
 .env
+.env.*
 
 # Private uploaded documents
 App_Data/
