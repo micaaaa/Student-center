@@ -66,6 +66,18 @@ const translations: Record<string, string> = {
 };
 
 const applicationMessages = new Set([
+    'The application has not been scored yet.',
+    'Preliminary ranking was not found.',
+    'Published preliminary ranking was not found.',
+    'Final ranking was not found.',
+    'Published final ranking was not found.',
+    'Accommodation eligibility was not found.',
+    'Appeal was not found.',
+    'The appeal period is not open.',
+    'Appeals can only be changed before the competition is finalized.',
+    'Only applications on the preliminary ranking can be appealed.',
+    'An appeal already exists for this application.',
+    'Appeal reason must contain between 1 and 4000 characters.',
     'Create a student profile before managing applications.',
     'You already have an application for this competition.',
     'Applications are allowed only for an open competition.',

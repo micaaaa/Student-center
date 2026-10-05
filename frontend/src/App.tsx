@@ -8,6 +8,8 @@ import { CompetitionsPage } from './pages/CompetitionsPage';
 import { CompetitionPage } from './pages/CompetitionPage';
 import { ApplicationsPage } from './pages/ApplicationsPage';
 import { ApplicationPage } from './pages/ApplicationPage';
+import { ApplicationResultsPage } from './pages/ApplicationResultsPage';
+import { RankingsPage } from './pages/RankingsPage';
 
 export default function App() {
     return (
@@ -23,8 +25,16 @@ export default function App() {
                                 <Route path="/profile" element={<ProfilePage />} />
                                 <Route path="/competitions" element={<CompetitionsPage />} />
                                 <Route path="/competitions/:id" element={<CompetitionPage />} />
+                                <Route
+                                    path="/competitions/:id/rankings"
+                                    element={<RankingsPage />}
+                                />
                                 <Route path="/applications" element={<ApplicationsPage />} />
                                 <Route path="/applications/:id" element={<ApplicationPage />} />
+                                <Route
+                                    path="/applications/:id/results"
+                                    element={<ApplicationResultsPage />}
+                                />
                             </Route>
                             <Route
                                 path="/access-denied"

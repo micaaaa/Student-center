@@ -177,6 +177,9 @@ function ApplicationRecord({
                     <span className="eyebrow">APPLICATION RECORD</span>
                     <h1>{competition.data?.name ?? 'Application details'}</h1>
                     <p className="muted record-reference">Reference: {application.id}</p>
+                    <Link className="text-link" to={'/applications/' + application.id + '/results'}>
+                        View score, decision and appeal
+                    </Link>
                 </div>
                 <StatusBadge status={application.status} />
             </div>

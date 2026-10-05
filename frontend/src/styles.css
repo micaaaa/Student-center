@@ -1353,3 +1353,33 @@ input[type='file'] {
         margin-top: 20px;
     }
 }
+.ranking-scroll {
+    overflow-x: auto;
+}
+
+.ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.ranking-table caption {
+    text-align: left;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.ranking-table th,
+.ranking-table td {
+    padding: 0.85rem;
+    border-bottom: 1px solid #dce3dc;
+}
+
+.ranking-mine {
+    background: #edf3ec;
+}
+
+.ranking-owner {
+    display: block;
+    margin-top: 0.35rem;
+}

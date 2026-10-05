@@ -54,6 +54,14 @@ export function CompetitionPage() {
                 <span className="eyebrow">ACADEMIC YEAR {competition.academicYear}</span>
                 <h1>{competition.name}</h1>
                 <StatusBadge status={competition.status} />
+                <div className="button-row application-section">
+                    <Link
+                        className="secondary"
+                        to={'/competitions/' + competition.id + '/rankings'}
+                    >
+                        View published rankings
+                    </Link>
+                </div>
             </div>
             <div className="application-layout">
                 <section className="panel">
