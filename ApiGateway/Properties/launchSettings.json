@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "ApiGateway": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "health",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:50386;http://localhost:50387"
+    }
+  }
+}
