@@ -7,6 +7,8 @@ import {
     ArrowUpRight,
     Menu,
     X,
+    CalendarDays,
+    Files,
 } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
@@ -71,9 +73,17 @@ export function Layout() {
                         <LayoutDashboard size={19} /> Overview
                     </NavLink>
                     {user.role === 'STUDENT' && (
-                        <NavLink to="/profile" onClick={() => setOpen(false)}>
-                            <UserRound size={19} /> My profile
-                        </NavLink>
+                        <>
+                            <NavLink to="/profile" onClick={() => setOpen(false)}>
+                                <UserRound size={19} /> My profile
+                            </NavLink>
+                            <NavLink to="/competitions" onClick={() => setOpen(false)}>
+                                <CalendarDays size={19} /> Competitions
+                            </NavLink>
+                            <NavLink to="/applications" onClick={() => setOpen(false)}>
+                                <Files size={19} /> My applications
+                            </NavLink>
+                        </>
                     )}
                 </nav>
                 <div className="sidebar-note">

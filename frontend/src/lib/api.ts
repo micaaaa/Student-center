@@ -65,16 +65,41 @@ const translations: Record<string, string> = {
         'A student profile already exists. Refresh the page.',
 };
 
-async function send<T>(path: string, options: RequestInit = {}, token?: string): Promise<T> {
+const applicationMessages = new Set([
+    'Create a student profile before managing applications.',
+    'You already have an application for this competition.',
+    'Applications are allowed only for an open competition.',
+    'The competition application period is not active.',
+    'Only a draft application can be edited.',
+    'Only a draft application can be submitted.',
+    'Documents can only be changed on a draft application.',
+    'Application was not found.',
+    'Competition was not found.',
+    'Document was not found.',
+    'Document file was not found.',
+    'Allowed file formats are PDF, JPG and PNG.',
+    'File content does not match the selected format.',
+    'The file is empty.',
+    'The maximum file size is 10 MB.',
+]);
+
+interface RequestOptions extends RequestInit {
+    responseType?: 'json' | 'blob';
+}
+
+async function send<T>(path: string, options: RequestOptions = {}, token?: string): Promise<T> {
     const headers = new Headers(options.headers);
-    if (options.body) headers.set('Content-Type', 'application/json');
+    if (options.body && !(options.body instanceof FormData)) {
+        headers.set('Content-Type', 'application/json');
+    }
     if (token) headers.set('Authorization', 'Bearer ' + token);
 
     let response: Response;
     try {
         const timeout = AbortSignal.timeout(20_000);
         const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
-        response = await fetch(baseUrl + path, { ...options, headers, signal });
+        const { responseType: _, ...requestOptions } = options;
+        response = await fetch(baseUrl + path, { ...requestOptions, headers, signal });
     } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') throw error;
         throw new ApiError(0, 'Unable to connect to the server. Please try again.');
@@ -83,6 +108,7 @@ async function send<T>(path: string, options: RequestInit = {}, token?: string):
         const body = await response.json().catch(() => null);
         const message =
             translations[body?.message] ||
+            (response.status < 500 && applicationMessages.has(body?.message) ? body.message : '') ||
             (response.status === 401
                 ? 'Authentication failed. Check your credentials or sign in again.'
                 : response.status === 403
@@ -91,12 +117,17 @@ async function send<T>(path: string, options: RequestInit = {}, token?: string):
                     ? 'The service is temporarily unavailable. Please try again.'
                     : response.status === 400
                       ? 'Check the information provided and try again.'
-                      : response.status === 409
-                        ? 'The submitted information conflicts with an existing record.'
-                        : 'The request could not be completed. Please try again.');
+                      : response.status === 413
+                        ? 'The maximum file size is 10 MB.'
+                        : response.status === 404
+                          ? 'The requested record was not found.'
+                          : response.status === 409
+                            ? 'The submitted information conflicts with an existing record.'
+                            : 'The request could not be completed. Please try again.');
         throw new ApiError(response.status, message);
     }
-    return response.status === 204 ? (undefined as T) : response.json();
+    if (response.status === 204) return undefined as T;
+    return options.responseType === 'blob' ? (response.blob() as Promise<T>) : response.json();
 }
 
 async function refresh() {
@@ -125,7 +156,7 @@ async function refresh() {
     return refreshTask;
 }
 
-export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
     const requestRevision = revision;
     if (!session) throw new ApiError(401, 'Please sign in again.');
     if (Date.parse(session.expiresAtUtc) <= Date.now() + 30_000) await refresh();

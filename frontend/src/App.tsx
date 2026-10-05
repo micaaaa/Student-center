@@ -4,6 +4,10 @@ import { Layout } from './components/Layout';
 import { AuthPage } from './pages/AuthPage';
 import { Dashboard } from './pages/Dashboard';
 import { ProfilePage } from './pages/ProfilePage';
+import { CompetitionsPage } from './pages/CompetitionsPage';
+import { CompetitionPage } from './pages/CompetitionPage';
+import { ApplicationsPage } from './pages/ApplicationsPage';
+import { ApplicationPage } from './pages/ApplicationPage';
 
 export default function App() {
     return (
@@ -17,6 +21,10 @@ export default function App() {
                             <Route index element={<Dashboard />} />
                             <Route element={<ProtectedRoute roles={['STUDENT']} />}>
                                 <Route path="/profile" element={<ProfilePage />} />
+                                <Route path="/competitions" element={<CompetitionsPage />} />
+                                <Route path="/competitions/:id" element={<CompetitionPage />} />
+                                <Route path="/applications" element={<ApplicationsPage />} />
+                                <Route path="/applications/:id" element={<ApplicationPage />} />
                             </Route>
                             <Route
                                 path="/access-denied"

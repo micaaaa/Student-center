@@ -398,6 +398,9 @@ label small {
     display: flex;
 }
 .sidebar {
+    top: 0;
+    left: 0;
+    overflow-y: auto;
     width: 240px;
     background: var(--green);
     color: #dce8dd;
@@ -1028,5 +1031,325 @@ label small {
 @media (prefers-reduced-motion: reduce) {
     * {
         transition: none !important;
+    }
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #61745b;
+    font-size: 13px;
+    margin-bottom: 24px;
+}
+.text-link {
+    display: inline-block;
+    margin-top: 24px;
+    font-size: 13px;
+    color: #456747;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.list-toolbar {
+    display: flex;
+    align-items: flex-end;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+.list-toolbar label {
+    min-width: 210px;
+    margin: 0;
+}
+.search-field {
+    flex: 1;
+}
+.search-field > div {
+    position: relative;
+}
+.search-field svg {
+    position: absolute;
+    top: 14px;
+    left: 13px;
+    color: #80907c;
+}
+.search-field input {
+    padding-left: 41px;
+}
+.competition-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+.competition-card {
+    min-width: 0;
+}
+.competition-card .section-heading {
+    margin: 0 0 18px;
+    gap: 14px;
+}
+.competition-card .eyebrow {
+    margin: 0;
+    font-size: 9px;
+}
+.competition-card h2 {
+    font-size: 21px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+.competition-card h2 a:hover {
+    text-decoration: underline;
+}
+.description-preview {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+.competition-footer {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    margin-top: 25px;
+    padding-top: 20px;
+}
+.competition-footer small {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: #7d8a75;
+    margin-bottom: 8px;
+}
+.competition-footer strong {
+    font-size: 12px;
+    font-weight: 500;
+}
+.status-badge {
+    display: inline-block;
+    padding: 6px 11px;
+    border-radius: 20px;
+    background: #eef0ed;
+    color: #64715f;
+    font-size: 11px;
+    white-space: nowrap;
+}
+.status-open,
+.status-accepted,
+.status-valid {
+    background: #e6efdf;
+    color: #476741;
+}
+.status-submitted,
+.status-under-review {
+    background: #e9eef6;
+    color: #486384;
+}
+.status-pending,
+.status-draft {
+    background: #f5efdd;
+    color: #806832;
+}
+.status-invalid,
+.status-rejected {
+    background: #f8e9e3;
+    color: #9b5142;
+}
+.empty-state {
+    text-align: center;
+    padding: 50px 25px;
+}
+.empty-state > svg {
+    color: #7a8a66;
+    margin-bottom: 20px;
+}
+.button-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.notice p {
+    margin-bottom: 12px;
+}
+.application-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+.application-layout .status-badge {
+    margin-bottom: 16px;
+}
+.preserve-lines {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.application-section,
+.submission-panel {
+    margin-top: 24px;
+}
+.application-summary .details-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.record-reference {
+    overflow-wrap: anywhere;
+    font-size: 12px;
+}
+textarea {
+    display: block;
+    resize: vertical;
+    min-height: 130px;
+    width: 100%;
+    margin-top: 10px;
+    padding: 13px 15px;
+    font: inherit;
+    font-weight: 400;
+    border: 1px solid #d9e0d9;
+    border-radius: 7px;
+    color: #263f36;
+    background: #fff;
+}
+textarea:focus {
+    outline: none;
+    border-color: #6b8c71;
+    box-shadow: 0 0 0 3px #dce7d5;
+}
+.form-actions {
+    align-items: center;
+}
+.document-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.document-list > li {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+}
+.document-list > li:first-child {
+    padding-top: 0;
+}
+.document-info {
+    min-width: 0;
+}
+.document-info > strong {
+    display: block;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+    margin-bottom: 8px;
+}
+.document-info > span:not(.status-badge) {
+    display: block;
+    font-size: 11px;
+    color: #7c8976;
+    margin-bottom: 8px;
+}
+.document-info .review-comment {
+    font-size: 13px;
+    margin: 13px 0 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.document-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.document-actions button {
+    font-size: 12px;
+    padding: 9px 12px;
+}
+.danger-text {
+    color: #9b5142;
+}
+.upload-form {
+    margin-top: 25px;
+    border: 1px dashed #cbd5c3;
+    border-radius: 8px;
+    padding: 22px;
+    background: #fafbf7;
+}
+input[type='file'] {
+    padding: 10px;
+    font-size: 12px;
+    min-width: 0;
+}
+.submission-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+}
+.submission-panel > div {
+    max-width: 630px;
+}
+.submission-panel h2 {
+    font-size: 20px;
+}
+.submission-panel > button {
+    flex-shrink: 0;
+}
+.confirmation-dialog {
+    width: min(510px, calc(100% - 32px));
+    padding: 30px;
+    color: var(--green);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 24px 80px #142e3340;
+}
+.confirmation-dialog::backdrop {
+    background: #183c3466;
+}
+.confirmation-dialog p {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+@media (max-width: 1100px) {
+    .competition-list,
+    .application-layout {
+        grid-template-columns: 1fr;
+    }
+    .application-summary .details-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        row-gap: 24px;
+    }
+    .document-list > li,
+    .submission-panel {
+        flex-direction: column;
+    }
+}
+@media (max-width: 600px) {
+    .list-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+    .list-toolbar label {
+        min-width: 0;
+    }
+    .application-summary .details-grid,
+    .upload-form .form-grid {
+        grid-template-columns: 1fr;
+    }
+    .upload-form {
+        padding: 16px;
+    }
+    .document-actions {
+        width: 100%;
+    }
+    .document-actions button {
+        flex: 1;
+    }
+    .submission-panel > button {
+        width: 100%;
+    }
+    .sidebar.is-open .sidebar-note {
+        margin-top: 20px;
     }
 }

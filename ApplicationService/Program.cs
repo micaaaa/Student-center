@@ -48,7 +48,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<IStudentClient, StudentClient>(client =>
-    client.BaseAddress = new Uri("https://localhost:49686/"));
+    client.BaseAddress = new Uri(
+        builder.Configuration["Services:StudentServiceUrl"] ?? "https://localhost:49686/"));
 
 builder.Services.AddScoped<ICompetitionRepository, CompetitionRepository>();
 builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
