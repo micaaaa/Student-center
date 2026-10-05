@@ -66,6 +66,19 @@ const translations: Record<string, string> = {
 };
 
 const applicationMessages = new Set([
+    'Submitted application was not found.',
+    'Only a submitted application can enter review.',
+    'Start application review before reviewing documents.',
+    'The application is no longer under review.',
+    'Only an application under review can be scored.',
+    'At least one document is required and every document must be VALID.',
+    'A comment is required for an invalid document.',
+    'Review comment must not exceed 2000 characters.',
+    'All five scoring categories are required.',
+    'Points must be non-negative, have at most two decimal places and fit decimal(18,2).',
+    'Total points exceed the supported storage limit.',
+    'The record has changed. Reload it before retrying.',
+    'The review conflicted with another operation. Reload before retrying.',
     'The application has not been scored yet.',
     'Preliminary ranking was not found.',
     'Published preliminary ranking was not found.',

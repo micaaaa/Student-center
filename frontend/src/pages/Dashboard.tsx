@@ -21,7 +21,7 @@ export function Dashboard() {
                     <p>
                         {student
                             ? 'Review and update your personal, academic and contact information.'
-                            : 'Review your account information and assigned permissions.'}
+                            : 'Review your account information and available services.'}
                     </p>
                     {student && (
                         <Link className="primary" to="/profile">
@@ -68,30 +68,14 @@ export function Dashboard() {
                     <strong>{roleLabels[user.role]}</strong>
                 </article>
             </div>
-            {!student && (
-                <section className="panel">
-                    <h2>Assigned permissions</h2>
-                    {user.permissions.length ? (
-                        <ul className="permission-list">
-                            {user.permissions.map((permission) => (
-                                <li key={permission}>{permission}</li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="muted">
-                            No additional permissions have been assigned to this account.
-                        </p>
-                    )}
-                </section>
-            )}
             <div className="quiet-note">
                 <BookOpen size={22} />
                 <div>
-                    <strong>{student ? 'Profile information' : 'Access permissions'}</strong>
+                    <strong>{student ? 'Profile information' : 'Administrative services'}</strong>
                     <p>
                         {student
                             ? 'Academic and contact details can be updated on the profile page.'
-                            : 'Available actions depend on the permissions assigned by an administrator.'}
+                            : 'Select a service from the navigation menu to manage student records.'}
                     </p>
                 </div>
             </div>

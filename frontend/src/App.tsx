@@ -10,6 +10,8 @@ import { ApplicationsPage } from './pages/ApplicationsPage';
 import { ApplicationPage } from './pages/ApplicationPage';
 import { ApplicationResultsPage } from './pages/ApplicationResultsPage';
 import { RankingsPage } from './pages/RankingsPage';
+import { StaffApplicationsPage } from './pages/StaffApplicationsPage';
+import { StaffApplicationPage } from './pages/StaffApplicationPage';
 
 export default function App() {
     return (
@@ -21,6 +23,23 @@ export default function App() {
                     <Route element={<ProtectedRoute />}>
                         <Route element={<Layout />}>
                             <Route index element={<Dashboard />} />
+                            <Route
+                                element={
+                                    <ProtectedRoute
+                                        roles={['STAFF', 'ADMIN']}
+                                        permission="ManageApplications"
+                                    />
+                                }
+                            >
+                                <Route
+                                    path="/staff/applications"
+                                    element={<StaffApplicationsPage />}
+                                />
+                                <Route
+                                    path="/staff/applications/:id"
+                                    element={<StaffApplicationPage />}
+                                />
+                            </Route>
                             <Route element={<ProtectedRoute roles={['STUDENT']} />}>
                                 <Route path="/profile" element={<ProfilePage />} />
                                 <Route path="/competitions" element={<CompetitionsPage />} />

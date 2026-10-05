@@ -69,6 +69,12 @@ export function Layout() {
                 </NavLink>
                 <span className="nav-label">NAVIGATION</span>
                 <nav aria-label="Main navigation">
+                    {['STAFF', 'ADMIN'].includes(user.role) &&
+                        user.permissions.includes('ManageApplications') && (
+                            <NavLink to="/staff/applications" onClick={() => setOpen(false)}>
+                                <Files size={19} /> Application review
+                            </NavLink>
+                        )}
                     <NavLink to="/" end onClick={() => setOpen(false)}>
                         <LayoutDashboard size={19} /> Overview
                     </NavLink>
@@ -91,7 +97,7 @@ export function Layout() {
                     <p>
                         {user.role === 'STUDENT'
                             ? 'Manage your personal and academic information.'
-                            : 'Review your account details and assigned permissions.'}
+                            : 'Review your account details and available services.'}
                     </p>
                     {user.role === 'STUDENT' && (
                         <NavLink to="/profile" onClick={() => setOpen(false)}>

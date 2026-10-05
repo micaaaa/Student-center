@@ -45,7 +45,7 @@ export function useAuth() {
     return { ...useContext(AuthContext), user: session?.user ?? null };
 }
 
-export function ProtectedRoute({ roles }: { roles?: Role[] }) {
+export function ProtectedRoute({ roles, permission }: { roles?: Role[]; permission?: string }) {
     const { user, loading, error, retry } = useAuth();
     const location = useLocation();
     if (loading)
@@ -64,5 +64,7 @@ export function ProtectedRoute({ roles }: { roles?: Role[] }) {
             </div>
         );
     if (roles && !roles.includes(user.role)) return <Navigate to="/access-denied" replace />;
+    if (permission && !user.permissions.includes(permission))
+        return <Navigate to="/access-denied" replace />;
     return <Outlet />;
 }
