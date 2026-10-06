@@ -70,6 +70,12 @@ export function Layout() {
                 <span className="nav-label">NAVIGATION</span>
                 <nav aria-label="Main navigation">
                     {['STAFF', 'ADMIN'].includes(user.role) &&
+                        user.permissions.includes('ManageAccommodation') && (
+                            <NavLink to="/staff/dorms" onClick={() => setOpen(false)}>
+                                <GraduationCap size={19} /> Dormitories and rooms
+                            </NavLink>
+                        )}
+                    {['STAFF', 'ADMIN'].includes(user.role) &&
                         user.permissions.includes('ManageApplications') && (
                             <>
                                 <NavLink to="/staff/competitions" onClick={() => setOpen(false)}>

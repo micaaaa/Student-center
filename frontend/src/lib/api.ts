@@ -66,6 +66,17 @@ const translations: Record<string, string> = {
 };
 
 const applicationMessages = new Set([
+    'Dorm was not found.',
+    'Room was not found.',
+    'Dorm capacity cannot be lower than the total room capacity.',
+    'An occupied dorm cannot be deactivated.',
+    'Activate the dorm before adding rooms.',
+    'Activate the dorm before making a room available.',
+    'Room number already exists in this dorm.',
+    'The total room capacity would exceed dorm capacity.',
+    'Capacity cannot be lower than current occupancy.',
+    'An occupied room cannot be made inactive or put under maintenance.',
+    'Inventory changed concurrently. Reload before retrying.',
     'The preliminary ranking has already been published.',
     'The final ranking has already been published.',
     'Ranking data has changed. Generate the draft again.',

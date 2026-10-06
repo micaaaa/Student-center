@@ -16,6 +16,8 @@ import { StaffRankingsPage } from './pages/StaffRankingsPage';
 import { StaffCompetitionResultsPage } from './pages/StaffCompetitionResultsPage';
 import { StaffCompetitionsPage } from './pages/StaffCompetitionsPage';
 import { NewCompetitionPage, StaffCompetitionPage } from './pages/StaffCompetitionPage';
+import { DormsPage } from './pages/DormsPage';
+import { DormPage } from './pages/DormPage';
 
 export default function App() {
     return (
@@ -27,6 +29,17 @@ export default function App() {
                     <Route element={<ProtectedRoute />}>
                         <Route element={<Layout />}>
                             <Route index element={<Dashboard />} />
+                            <Route
+                                element={
+                                    <ProtectedRoute
+                                        roles={['STAFF', 'ADMIN']}
+                                        permission="ManageAccommodation"
+                                    />
+                                }
+                            >
+                                <Route path="/staff/dorms" element={<DormsPage />} />
+                                <Route path="/staff/dorms/:id" element={<DormPage />} />
+                            </Route>
                             <Route
                                 element={
                                     <ProtectedRoute
