@@ -71,9 +71,14 @@ export function Layout() {
                 <nav aria-label="Main navigation">
                     {['STAFF', 'ADMIN'].includes(user.role) &&
                         user.permissions.includes('ManageFood') && (
-                            <NavLink to="/staff/restaurants" onClick={() => setOpen(false)}>
-                                <CalendarDays size={19} /> Restaurants and menus
-                            </NavLink>
+                            <>
+                                <NavLink to="/staff/restaurants" onClick={() => setOpen(false)}>
+                                    <CalendarDays size={19} /> Restaurants and menus
+                                </NavLink>
+                                <NavLink to="/staff/meals" onClick={() => setOpen(false)}>
+                                    <Files size={19} /> Meal administration
+                                </NavLink>
+                            </>
                         )}
                     {['STAFF', 'ADMIN'].includes(user.role) &&
                         user.permissions.includes('ManageAccommodation') && (
@@ -107,6 +112,9 @@ export function Layout() {
                         <>
                             <NavLink to="/profile" onClick={() => setOpen(false)}>
                                 <UserRound size={19} /> My profile
+                            </NavLink>
+                            <NavLink to="/my-meals" onClick={() => setOpen(false)}>
+                                <Files size={19} /> My meals
                             </NavLink>
                             <NavLink to="/restaurants" onClick={() => setOpen(false)}>
                                 <CalendarDays size={19} /> Restaurants and menus

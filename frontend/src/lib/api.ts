@@ -66,6 +66,17 @@ const translations: Record<string, string> = {
 };
 
 const applicationMessages = new Set([
+    'Meal entitlement not found.',
+    'An entitlement already exists for this student, month and meal type.',
+    'Allowed quantity must be positive and cannot be below the consumed quantity.',
+    'Expired meal entitlement cannot be changed.',
+    'Meal entitlement is not active for the current month.',
+    'Meals cannot be consumed at an inactive restaurant.',
+    'No meals remain for this entitlement.',
+    'Purchases require an active, unexpired meal entitlement.',
+    'Purchased quantity exceeds the supported entitlement limit.',
+    'Request ID was already used for a different purchase.',
+    'Request ID was already used for a different consumption.',
     'Restaurant not found.',
     'Menu not found.',
     'A menu already exists for this restaurant and date.',

@@ -23,6 +23,7 @@ import { AssignmentPage } from './pages/AssignmentPage';
 import { MyAccommodationPage } from './pages/MyAccommodationPage';
 import { RestaurantsPage } from './pages/RestaurantsPage';
 import { RestaurantPage } from './pages/RestaurantPage';
+import { MealsPage } from './pages/MealsPage';
 
 export default function App() {
     return (
@@ -46,6 +47,7 @@ export default function App() {
                                     path="/staff/restaurants"
                                     element={<RestaurantsPage management />}
                                 />
+                                <Route path="/staff/meals" element={<MealsPage management />} />
                                 <Route
                                     path="/staff/restaurants/:id"
                                     element={<RestaurantPage management />}
@@ -102,6 +104,7 @@ export default function App() {
                                 />
                             </Route>
                             <Route element={<ProtectedRoute roles={['STUDENT']} />}>
+                                <Route path="/my-meals" element={<MealsPage />} />
                                 <Route path="/restaurants" element={<RestaurantsPage />} />
                                 <Route path="/restaurants/:id" element={<RestaurantPage />} />
                                 <Route path="/my-accommodation" element={<MyAccommodationPage />} />
