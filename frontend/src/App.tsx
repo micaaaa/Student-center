@@ -1,3 +1,4 @@
+import { StudentsPage, StudentPage } from './pages/StudentsPage';
 import { BrowserRouter, Link, Route, Routes } from 'react-router';
 import { AuthProvider, ProtectedRoute } from './auth/AuthContext';
 import { Layout } from './components/Layout';
@@ -30,6 +31,8 @@ import { MaintenanceRequestPage } from './pages/MaintenanceRequestPage';
 import { NewMaintenancePage } from './pages/NewMaintenancePage';
 import { MaintenanceWorkersPage } from './pages/MaintenanceWorkersPage';
 import { MaintenanceTasksPage, MaintenanceTaskPage } from './pages/MaintenanceTasksPage';
+import { BillingPage } from './pages/BillingPage';
+import { ChargePage } from './pages/ChargePage';
 
 export default function App() {
     return (
@@ -41,7 +44,23 @@ export default function App() {
                     <Route element={<ProtectedRoute />}>
                         <Route element={<Layout />}>
                             <Route index element={<Dashboard />} />
+                            <Route
+                                element={
+                                    <ProtectedRoute
+                                        roles={['STAFF', 'ADMIN']}
+                                        permission="ManageBilling"
+                                    />
+                                }
+                            >
+                                <Route path="/staff/billing" element={<BillingPage management />} />
+                                <Route
+                                    path="/staff/billing/charges/:id"
+                                    element={<ChargePage management />}
+                                />
+                            </Route>
                             <Route element={<ProtectedRoute roles={['STAFF', 'ADMIN']} />}>
+                                <Route path="/staff/students" element={<StudentsPage />} />
+                                <Route path="/staff/students/:id" element={<StudentPage />} />
                                 <Route
                                     path="/maintenance-work"
                                     element={<MaintenanceTasksPage />}
@@ -145,6 +164,8 @@ export default function App() {
                                 />
                             </Route>
                             <Route element={<ProtectedRoute roles={['STUDENT']} />}>
+                                <Route path="/my-billing" element={<BillingPage />} />
+                                <Route path="/my-billing/charges/:id" element={<ChargePage />} />
                                 <Route path="/maintenance" element={<MaintenanceRequestsPage />} />
                                 <Route path="/maintenance/new" element={<NewMaintenancePage />} />
                                 <Route

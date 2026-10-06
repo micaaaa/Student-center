@@ -168,10 +168,6 @@ function ApplicationRecord({
 
     return (
         <>
-            <Link className="back-link" to="/applications">
-                <ArrowLeft size={16} />
-                My applications
-            </Link>
             <div className="page-heading heading-row">
                 <div>
                     <span className="eyebrow">APPLICATION RECORD</span>

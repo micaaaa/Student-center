@@ -46,10 +46,6 @@ export function CompetitionPage() {
         );
     return (
         <>
-            <Link className="back-link" to="/competitions">
-                <ArrowLeft size={16} />
-                Competitions
-            </Link>
             <div className="page-heading">
                 <span className="eyebrow">ACADEMIC YEAR {competition.academicYear}</span>
                 <h1>{competition.name}</h1>

@@ -4,6 +4,8 @@ namespace StudentCenter.StudentService.Application.Interfaces;
 
 public interface IStudentService
 {
+    Task<StudentSearchResponse> SearchAsync(string? search, int page, int pageSize, CancellationToken cancellationToken = default);
+
     Task<StudentResponse> CreateAsync(Guid userId, CreateStudentProfileRequest request, CancellationToken cancellationToken = default);
 
     Task<StudentResponse> GetMyProfileAsync(Guid userId, CancellationToken cancellationToken = default);

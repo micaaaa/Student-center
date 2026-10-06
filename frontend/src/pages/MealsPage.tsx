@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import type { FormEvent } from 'react';
+import { useSearchParams } from 'react-router';
+import { StudentSearch } from '../components/StudentSearch';
 import { useResource } from '../hooks/useResource';
 import { getSession } from '../lib/api';
 import { mealTypes } from '../lib/food';
@@ -12,22 +13,9 @@ import { MealHistory } from '../components/MealHistory';
 
 export function MealsPage({ management = false }: { management?: boolean }) {
     const [period, setPeriod] = useState(() => new Date().toISOString().slice(0, 7));
-    const [input, setInput] = useState('');
-    const [studentId, setStudentId] = useState('');
-    const [error, setError] = useState('');
+    const [search, setSearch] = useSearchParams();
+    const studentId = search.get('studentId') || '';
     const [year, month] = period.split('-').map(Number);
-    function selectStudent(event: FormEvent) {
-        event.preventDefault();
-        if (
-            !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.trim()) ||
-            /^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(input.trim())
-        ) {
-            setError('Enter a valid student reference.');
-            return;
-        }
-        setStudentId(input.trim());
-        setError('');
-    }
     return (
         <>
             <div className="page-heading">
@@ -50,20 +38,31 @@ export function MealsPage({ management = false }: { management?: boolean }) {
                     />
                 </label>
             </div>
-            {management && (
-                <form className="panel" onSubmit={selectStudent}>
-                    <label>
-                        Student reference
-                        <input required value={input} onChange={(e) => setInput(e.target.value)} />
-                    </label>
-                    <button className="secondary application-section">Load student</button>
-                    {error && (
-                        <p className="notice error" role="alert">
-                            {error}
-                        </p>
-                    )}
-                </form>
-            )}
+            {management &&
+                (studentId ? (
+                    <button
+                        className="secondary"
+                        onClick={() =>
+                            setSearch((current) => {
+                                const next = new URLSearchParams(current);
+                                next.delete('studentId');
+                                return next;
+                            })
+                        }
+                    >
+                        Choose another student
+                    </button>
+                ) : (
+                    <StudentSearch
+                        onSelect={(id) =>
+                            setSearch((current) => {
+                                const next = new URLSearchParams(current);
+                                next.set('studentId', id);
+                                return next;
+                            })
+                        }
+                    />
+                ))}
             {year >= 1 &&
                 year <= 9998 &&
                 month >= 1 &&

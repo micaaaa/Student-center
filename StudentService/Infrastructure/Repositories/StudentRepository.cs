@@ -7,6 +7,27 @@ namespace StudentCenter.StudentService.Infrastructure.Repositories;
 
 public sealed class StudentRepository(StudentDbContext dbContext) : IStudentRepository
 {
+    public async Task<(IReadOnlyList<Student> Items, int TotalCount)> SearchAsync(
+        string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.Students.AsNoTracking();
+        foreach (var term in (search ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            query = query.Where(student =>
+                student.FirstName.Contains(term) ||
+                student.LastName.Contains(term) ||
+                student.StudentNumber.Contains(term));
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query.OrderBy(student => student.LastName)
+            .ThenBy(student => student.FirstName)
+            .ThenBy(student => student.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+        return (items, totalCount);
+    }
     public Task<Student?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         dbContext.Students.SingleOrDefaultAsync(student => student.Id == id, cancellationToken);
 

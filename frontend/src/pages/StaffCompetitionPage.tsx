@@ -12,9 +12,6 @@ export function NewCompetitionPage() {
     const navigate = useNavigate();
     return (
         <>
-            <Link className="back-link" to="/staff/competitions">
-                Back to competitions
-            </Link>
             <div className="page-heading">
                 <h1>Create competition</h1>
                 <p className="muted">
@@ -81,9 +78,6 @@ function CompetitionRecord({
     }
     return (
         <>
-            <Link className="back-link" to="/staff/competitions">
-                Back to competitions
-            </Link>
             <div className="page-heading">
                 <span className="eyebrow">ACADEMIC YEAR {competition.academicYear}</span>
                 <h1>{competition.name}</h1>

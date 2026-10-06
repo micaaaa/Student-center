@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { useResource } from '../hooks/useResource';
 import type { Dorm, Room } from '../lib/accommodation';
 import { RequestError, StatusBadge } from '../components/ApplicationUi';
@@ -52,9 +52,6 @@ function DormRecord({
     }
     return (
         <>
-            <Link className="back-link" to="/staff/dorms">
-                Back to dormitories
-            </Link>
             <div className="page-heading heading-row">
                 <div>
                     <span className="eyebrow">ACCOMMODATION INVENTORY</span>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { useResource } from '../hooks/useResource';
 import { api, errorMessage } from '../lib/api';
 import { dateTime } from '../lib/applications';
@@ -78,9 +78,6 @@ function RequestRecord({
     }
     return (
         <>
-            <Link className="back-link" to={management ? '/staff/maintenance' : '/maintenance'}>
-                Back to maintenance requests
-            </Link>
             <div className="page-heading heading-row">
                 <div>
                     <h1>{item.title}</h1>

@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { useResource } from '../hooks/useResource';
 import type { Competition } from '../lib/applications';
 import { RequestError } from '../components/ApplicationUi';
@@ -12,9 +12,6 @@ export function RankingsPage() {
         return <RequestError error={competition.error} retry={competition.reload} />;
     return (
         <>
-            <Link className="back-link" to={'/competitions/' + id}>
-                Back to competition
-            </Link>
             <div className="page-heading">
                 <span className="eyebrow">PUBLISHED RESULTS</span>
                 <h1>{competition.data!.name}</h1>

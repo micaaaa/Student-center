@@ -66,6 +66,21 @@ const translations: Record<string, string> = {
 };
 
 const applicationMessages = new Set([
+    'A charge already exists for this accommodation and billing period.',
+    'Accommodation event has not been received yet. Check the reference and retry after synchronization.',
+    'Accommodation must belong to this student and must not be cancelled.',
+    'A charge for this source already exists.',
+    'Billing data changed concurrently. Retry using the same request ID.',
+    'Charge changed concurrently. Retry using the same request ID.',
+    'Payment data changed concurrently. Retry using the same request ID.',
+    'This payment request or transaction reference has already been recorded.',
+    'Charge not found.',
+    'Payment not found.',
+    'Payment cannot exceed the remaining charge amount.',
+    'Request ID was already used for a different charge.',
+    'Request ID was already used for a different payment.',
+    'Card and bank payments require a unique transaction reference of at most 100 characters.',
+    'Accommodation charges require a YYYY-MM billing period.',
     'Worker profile not found.',
     'Worker not found.',
     'Staff account not found.',

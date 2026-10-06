@@ -123,9 +123,6 @@ export function MaintenanceTaskPage() {
         (worker.data?.isActive && worker.data.id === item.assignedWorkerId);
     return (
         <>
-            <Link className="back-link" to="/maintenance-work">
-                Back to my tasks
-            </Link>
             <div className="page-heading heading-row">
                 <h1>{item.title}</h1>
                 <button

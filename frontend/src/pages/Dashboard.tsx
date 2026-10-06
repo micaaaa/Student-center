@@ -1,83 +1,53 @@
-import { ArrowRight, UserRound, ShieldCheck, Mail, BookOpen } from 'lucide-react';
+import { ArrowRight, UserRound } from 'lucide-react';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
-import { roleLabels } from '../components/Layout';
+import { portalServices } from '../lib/navigation';
 
 export function Dashboard() {
     const { user } = useAuth();
     if (!user) return null;
-    const student = user.role === 'STUDENT';
     return (
         <>
             <div className="page-heading">
-                <span className="eyebrow">OVERVIEW</span>
-                <h1>Account overview · {user.username}</h1>
-                <p className="muted">Account information and available services.</p>
+                <span className="eyebrow">STUDENT CENTER</span>
+                <h1>{user.role === 'STUDENT' ? 'Student services' : 'Service administration'}</h1>
+                <p className="muted">Choose a service to get started.</p>
             </div>
-            <section className="welcome-card">
-                <div>
-                    <span className="eyebrow">STUDENT ADMINISTRATION</span>
-                    <h2>{student ? 'Student profile' : 'Account details'}</h2>
-                    <p>
-                        {student
-                            ? 'Review and update your personal, academic and contact information.'
-                            : 'Review your account information and available services.'}
-                    </p>
-                    {student && (
-                        <Link className="primary" to="/profile">
-                            View profile <ArrowRight size={18} />
-                        </Link>
-                    )}
-                </div>
-                <div className="profile-illustration" aria-hidden="true">
-                    <div className="illustrated-card">
-                        <UserRound size={42} />
-                        <i />
-                        <i />
-                        <span>STUDENT PROFILE</span>
+            {user.role === 'STUDENT' && (
+                <div className="home-profile">
+                    <UserRound size={22} aria-hidden="true" />
+                    <div>
+                        <strong>Applying for accommodation?</strong>
+                        <p>
+                            Check your personal and academic details before submitting an
+                            application.
+                        </p>
                     </div>
-                    <span className="illustration-stamp">
-                        <ShieldCheck size={27} />
-                    </span>
+                    <Link className="text-link" to="/profile">
+                        Review my profile <ArrowRight size={16} />
+                    </Link>
                 </div>
-            </section>
-            <div className="section-heading">
-                <h2>Account information</h2>
-                <span className="status-pill">Active account</span>
-            </div>
-            <div className="account-grid">
-                <article className="info-card">
-                    <span className="tile-icon">
-                        <UserRound />
-                    </span>
-                    <small>USERNAME</small>
-                    <strong>{user.username}</strong>
-                </article>
-                <article className="info-card">
-                    <span className="tile-icon">
-                        <Mail />
-                    </span>
-                    <small>EMAIL ADDRESS</small>
-                    <strong>{user.email}</strong>
-                </article>
-                <article className="info-card">
-                    <span className="tile-icon">
-                        <ShieldCheck />
-                    </span>
-                    <small>ROLE</small>
-                    <strong>{roleLabels[user.role]}</strong>
-                </article>
-            </div>
-            <div className="quiet-note">
-                <BookOpen size={22} />
-                <div>
-                    <strong>{student ? 'Profile information' : 'Administrative services'}</strong>
-                    <p>
-                        {student
-                            ? 'Academic and contact details can be updated on the profile page.'
-                            : 'Select a service from the navigation menu to manage student records.'}
-                    </p>
-                </div>
+            )}
+            <div className="service-grid">
+                {portalServices(user).map(({ id, title, description, icon: Icon, links }) => (
+                    <section className="service-card" key={id} aria-labelledby={'service-' + id}>
+                        <Icon className="service-icon" size={26} aria-hidden="true" />
+                        <h2 id={'service-' + id}>{title}</h2>
+                        <p>{description}</p>
+                        <div className="service-actions">
+                            {links.map((link, index) => (
+                                <Link
+                                    key={link.to}
+                                    to={link.to}
+                                    className={index === 0 ? 'service-primary' : 'text-link'}
+                                >
+                                    {link.label}
+                                    {index === 0 && <ArrowRight size={17} aria-hidden="true" />}
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
+                ))}
             </div>
         </>
     );

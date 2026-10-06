@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useLocation, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { useResource } from '../hooks/useResource';
 import { api, errorMessage } from '../lib/api';
 import { dateTime, documentTypes } from '../lib/applications';
@@ -41,12 +41,6 @@ function ReviewRecord({
         'The application has not been scored yet.',
     ]);
     const competition = useResource<Competition>('/api/competitions/' + application.competitionId);
-    const location = useLocation();
-    const returnTo =
-        typeof location.state?.returnTo === 'string' &&
-        location.state.returnTo.startsWith('/staff/applications?')
-            ? location.state.returnTo
-            : '/staff/applications';
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -90,9 +84,6 @@ function ReviewRecord({
 
     return (
         <>
-            <Link className="back-link" to={returnTo}>
-                Back to application review
-            </Link>
             <div className="page-heading">
                 <span className="eyebrow">APPLICATION ASSESSMENT</span>
                 <h1>{competition.data?.name || 'Review application'}</h1>

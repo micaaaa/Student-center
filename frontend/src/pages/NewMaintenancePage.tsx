@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { useResource } from '../hooks/useResource';
 import { useOptionalResource } from '../lib/results';
 import { api, errorMessage } from '../lib/api';
@@ -58,9 +58,6 @@ export function NewMaintenancePage() {
     }
     return (
         <>
-            <Link className="back-link" to="/maintenance">
-                Back to maintenance requests
-            </Link>
             <div className="page-heading">
                 <h1>Report a problem</h1>
                 <p className="muted">The request will be linked to your current room.</p>

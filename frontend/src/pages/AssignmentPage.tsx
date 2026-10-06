@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { useResource } from '../hooks/useResource';
 import type { Assignment, Dorm, Room } from '../lib/accommodation';
 import { dateTime } from '../lib/applications';
@@ -84,9 +84,6 @@ function AssignmentRecord({
     }
     return (
         <>
-            <Link className="back-link" to="/staff/assignments">
-                Back to room assignments
-            </Link>
             <div className="page-heading heading-row">
                 <div>
                     <span className="eyebrow">ACCOMMODATION RECORD</span>

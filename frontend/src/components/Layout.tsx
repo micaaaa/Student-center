@@ -1,27 +1,29 @@
+import { PageNavigation } from './PageNavigation';
 import { useState } from 'react';
 import {
     GraduationCap,
     LayoutDashboard,
     UserRound,
     LogOut,
-    ArrowUpRight,
+    ChevronDown,
     Menu,
     X,
-    CalendarDays,
-    Files,
 } from 'lucide-react';
-import { NavLink, Outlet, useNavigate } from 'react-router';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { logout } from '../lib/api';
+import { portalServices, serviceLinkActive } from '../lib/navigation';
 
 export const roleLabels = { STUDENT: 'Student', STAFF: 'Staff', ADMIN: 'Administrator' };
 
 export function Layout() {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { pathname } = useLocation();
     const [open, setOpen] = useState(false);
     const [busy, setBusy] = useState(false);
     if (!user) return null;
+    const services = portalServices(user);
 
     async function signOut() {
         setBusy(true);
@@ -67,103 +69,67 @@ export function Layout() {
                         Center
                     </span>
                 </NavLink>
-                <span className="nav-label">NAVIGATION</span>
+                <span className="nav-label">SERVICES</span>
                 <nav aria-label="Main navigation">
-                    {['STAFF', 'ADMIN'].includes(user.role) && (
-                        <NavLink to="/maintenance-work" onClick={() => setOpen(false)}>
-                            <Files size={19} /> My maintenance tasks
-                        </NavLink>
-                    )}
-                    {['STAFF', 'ADMIN'].includes(user.role) &&
-                        user.permissions.includes('ManageMaintenance') && (
-                            <NavLink to="/staff/maintenance/workers" onClick={() => setOpen(false)}>
-                                <UserRound size={19} /> Maintenance workers
-                            </NavLink>
-                        )}
-                    {['STAFF', 'ADMIN'].includes(user.role) &&
-                        user.permissions.includes('ManageMaintenance') && (
-                            <NavLink to="/staff/maintenance" onClick={() => setOpen(false)}>
-                                <Files size={19} /> Maintenance requests
-                            </NavLink>
-                        )}
-                    {['STAFF', 'ADMIN'].includes(user.role) &&
-                        user.permissions.includes('ManageFood') && (
-                            <>
-                                <NavLink to="/staff/restaurants" onClick={() => setOpen(false)}>
-                                    <CalendarDays size={19} /> Restaurants and menus
-                                </NavLink>
-                                <NavLink to="/staff/meals" onClick={() => setOpen(false)}>
-                                    <Files size={19} /> Meal administration
-                                </NavLink>
-                            </>
-                        )}
-                    {['STAFF', 'ADMIN'].includes(user.role) &&
-                        user.permissions.includes('ManageAccommodation') && (
-                            <>
-                                <NavLink to="/staff/dorms" onClick={() => setOpen(false)}>
-                                    <GraduationCap size={19} /> Dormitories and rooms
-                                </NavLink>
-                                <NavLink to="/staff/assignments" onClick={() => setOpen(false)}>
-                                    <UserRound size={19} /> Room assignments
-                                </NavLink>
-                            </>
-                        )}
-                    {['STAFF', 'ADMIN'].includes(user.role) &&
-                        user.permissions.includes('ManageApplications') && (
-                            <>
-                                <NavLink to="/staff/competitions" onClick={() => setOpen(false)}>
-                                    <CalendarDays size={19} /> Competitions
-                                </NavLink>
-                                <NavLink to="/staff/applications" onClick={() => setOpen(false)}>
-                                    <Files size={19} /> Application review
-                                </NavLink>
-                                <NavLink to="/staff/rankings" onClick={() => setOpen(false)}>
-                                    <CalendarDays size={19} /> Rankings and appeals
-                                </NavLink>
-                            </>
-                        )}
                     <NavLink to="/" end onClick={() => setOpen(false)}>
-                        <LayoutDashboard size={19} /> Overview
+                        <LayoutDashboard size={19} /> Home
                     </NavLink>
-                    {user.role === 'STUDENT' && (
-                        <>
-                            <NavLink to="/profile" onClick={() => setOpen(false)}>
-                                <UserRound size={19} /> My profile
-                            </NavLink>
-                            <NavLink to="/maintenance" onClick={() => setOpen(false)}>
-                                <Files size={19} /> Maintenance requests
-                            </NavLink>
-                            <NavLink to="/my-meals" onClick={() => setOpen(false)}>
-                                <Files size={19} /> My meals
-                            </NavLink>
-                            <NavLink to="/restaurants" onClick={() => setOpen(false)}>
-                                <CalendarDays size={19} /> Restaurants and menus
-                            </NavLink>
-                            <NavLink to="/my-accommodation" onClick={() => setOpen(false)}>
-                                <GraduationCap size={19} /> My accommodation
-                            </NavLink>
-                            <NavLink to="/competitions" onClick={() => setOpen(false)}>
-                                <CalendarDays size={19} /> Competitions
-                            </NavLink>
-                            <NavLink to="/applications" onClick={() => setOpen(false)}>
-                                <Files size={19} /> My applications
-                            </NavLink>
-                        </>
-                    )}
-                </nav>
-                <div className="sidebar-note">
-                    <h3>Account services</h3>
-                    <p>
-                        {user.role === 'STUDENT'
-                            ? 'Manage your personal and academic information.'
-                            : 'Review your account details and available services.'}
-                    </p>
+                    {services.map(({ id, title, icon: Icon, links }) => {
+                        const active = links.some((link) =>
+                            serviceLinkActive(pathname, link.to, services),
+                        );
+                        if (id === 'students')
+                            return (
+                                <NavLink
+                                    key={id}
+                                    to="/staff/students"
+                                    onClick={() => setOpen(false)}
+                                >
+                                    <Icon size={19} />
+                                    Students
+                                </NavLink>
+                            );
+                        return (
+                            <details className="nav-group" key={id + pathname} open={active}>
+                                <summary>
+                                    <Icon size={19} aria-hidden="true" />
+                                    <span>{title}</span>
+                                    <ChevronDown
+                                        size={15}
+                                        className="nav-chevron"
+                                        aria-hidden="true"
+                                    />
+                                </summary>
+                                <div className="nav-group-links">
+                                    {links.map((link) => (
+                                        <NavLink
+                                            key={link.to}
+                                            to={link.to}
+                                            aria-current={
+                                                serviceLinkActive(pathname, link.to, services)
+                                                    ? 'page'
+                                                    : false
+                                            }
+                                            className={() =>
+                                                serviceLinkActive(pathname, link.to, services)
+                                                    ? 'active'
+                                                    : ''
+                                            }
+                                            onClick={() => setOpen(false)}
+                                        >
+                                            {link.label}
+                                        </NavLink>
+                                    ))}
+                                </div>
+                            </details>
+                        );
+                    })}
                     {user.role === 'STUDENT' && (
                         <NavLink to="/profile" onClick={() => setOpen(false)}>
-                            View profile <ArrowUpRight size={16} />
+                            <UserRound size={19} /> My profile
                         </NavLink>
                     )}
-                </div>
+                </nav>
                 <div className="sidebar-account">
                     <span className="avatar">{user.username.slice(0, 2).toUpperCase()}</span>
                     <div>
@@ -184,6 +150,7 @@ export function Layout() {
                     <span className="role-badge">{roleLabels[user.role]}</span>
                 </header>
                 <main id="main" className="main-content">
+                    <PageNavigation />
                     <Outlet />
                 </main>
                 <footer className="portal-footer">

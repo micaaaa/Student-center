@@ -12,6 +12,19 @@ namespace StudentCenter.StudentService.API.Controllers;
 [Authorize]
 public sealed class StudentsController(IStudentService studentService) : ControllerBase
 {
+    [HttpGet]
+    [Authorize(Roles = "STAFF,ADMIN")]
+    public async Task<ActionResult<StudentSearchResponse>> Search(
+        [FromQuery] string? search = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        if (page < 1 || page > 100000 || pageSize < 1 || pageSize > 100 || search?.Length > 150)
+            return BadRequest(new { message = "Invalid student search parameters." });
+
+        return Ok(await studentService.SearchAsync(search, page, pageSize, cancellationToken));
+    }
     [HttpPost("me")]
     [Authorize(Roles = "STUDENT")]
     public async Task<ActionResult<StudentResponse>> CreateMyProfile(CreateStudentProfileRequest request, CancellationToken cancellationToken) =>

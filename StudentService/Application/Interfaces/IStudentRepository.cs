@@ -4,6 +4,8 @@ namespace StudentCenter.StudentService.Application.Interfaces;
 
 public interface IStudentRepository
 {
+    Task<(IReadOnlyList<Student> Items, int TotalCount)> SearchAsync(string? search, int page, int pageSize, CancellationToken cancellationToken = default);
+
     Task<Student?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<Student?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);

@@ -29,9 +29,6 @@ function Results({ application }: { application: StudentApplication }) {
     ]);
     return (
         <>
-            <Link className="back-link" to={'/applications/' + application.id}>
-                Back to application
-            </Link>
             <div className="page-heading">
                 <span className="eyebrow">APPLICATION RESULTS</span>
                 <h1>Assessment and decision</h1>

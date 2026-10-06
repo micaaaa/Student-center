@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { useResource } from '../hooks/useResource';
 import { api, errorMessage } from '../lib/api';
 import { today, mealTypes } from '../lib/food';
@@ -38,9 +38,6 @@ function RestaurantRecord({
     const [date, setDate] = useState(today());
     return (
         <>
-            <Link className="back-link" to={management ? '/staff/restaurants' : '/restaurants'}>
-                Back to restaurants
-            </Link>
             <div className="page-heading">
                 <h1>{item.name}</h1>
                 <p>{item.address}</p>

@@ -8,6 +8,17 @@ namespace StudentCenter.StudentService.Application.Services;
 
 public sealed class StudentProfileService(IStudentRepository studentRepository) : IStudentService
 {
+    public async Task<StudentSearchResponse> SearchAsync(
+        string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var (items, totalCount) = await studentRepository.SearchAsync(search?.Trim(), page, pageSize, cancellationToken);
+        return new StudentSearchResponse(
+            items.Select(student => new StudentSummaryResponse(
+                student.Id, student.UserId, student.StudentNumber,
+                student.FirstName, student.LastName, student.Email,
+                student.Status.ToString().ToUpperInvariant())).ToList(),
+            totalCount, page, pageSize);
+    }
     public async Task<StudentResponse> CreateAsync(Guid userId, CreateStudentProfileRequest request, CancellationToken cancellationToken = default)
     {
         if (await studentRepository.GetByUserIdAsync(userId, cancellationToken) is not null)

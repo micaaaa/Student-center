@@ -130,9 +130,6 @@ function CompetitionResults({ competition }: { competition: Competition }) {
     }
     return (
         <>
-            <Link className="back-link" to="/staff/rankings">
-                Back to rankings and appeals
-            </Link>
             <div className="page-heading heading-row">
                 <div>
                     <span className="eyebrow">ACADEMIC YEAR {competition.academicYear}</span>
