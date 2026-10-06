@@ -7,6 +7,7 @@ import { priorities, requestStatuses } from '../lib/maintenance';
 import type { MaintenanceRequest } from '../lib/maintenance';
 import { RequestError, StatusBadge } from '../components/ApplicationUi';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import { WorkerAssignment, WorkControls, MaintenanceActions } from '../components/MaintenanceWork';
 
 export function MaintenanceRequestPage({ management = false }: { management?: boolean }) {
     const { id } = useParams();
@@ -213,6 +214,17 @@ function RequestRecord({
                     {action === 'reject' && <p className="preserve-lines">{reason}</p>}
                 </ConfirmationDialog>
             )}
+            {management && [2, 5, 6].includes(item.status) && (
+                <WorkerAssignment
+                    key={item.id + String(item.assignedWorkerId)}
+                    item={item}
+                    update={update}
+                />
+            )}
+            {management && [5, 6].includes(item.status) && (
+                <WorkControls key={item.id + item.status} item={item} update={update} />
+            )}
+            <MaintenanceActions key={item.updatedAtUtc} id={item.id} student={!management} />
         </>
     );
 }

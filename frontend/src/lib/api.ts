@@ -66,6 +66,17 @@ const translations: Record<string, string> = {
 };
 
 const applicationMessages = new Set([
+    'Worker profile not found.',
+    'Worker not found.',
+    'Staff account not found.',
+    'This account already has a worker profile.',
+    'Reassign or resolve open tasks before deactivating this worker.',
+    'Choose an active worker different from the current assignee.',
+    'Only accepted or ongoing requests can be assigned.',
+    'Only an assigned request can be started.',
+    'Interventions and resolution require work in progress.',
+    'Only the assigned worker or a maintenance supervisor can process this request.',
+    'An inactive worker cannot process requests.',
     'Category not found.',
     'A category with this name already exists.',
     'Inactive categories cannot be used for new requests.',

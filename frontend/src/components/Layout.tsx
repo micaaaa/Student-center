@@ -69,6 +69,17 @@ export function Layout() {
                 </NavLink>
                 <span className="nav-label">NAVIGATION</span>
                 <nav aria-label="Main navigation">
+                    {['STAFF', 'ADMIN'].includes(user.role) && (
+                        <NavLink to="/maintenance-work" onClick={() => setOpen(false)}>
+                            <Files size={19} /> My maintenance tasks
+                        </NavLink>
+                    )}
+                    {['STAFF', 'ADMIN'].includes(user.role) &&
+                        user.permissions.includes('ManageMaintenance') && (
+                            <NavLink to="/staff/maintenance/workers" onClick={() => setOpen(false)}>
+                                <UserRound size={19} /> Maintenance workers
+                            </NavLink>
+                        )}
                     {['STAFF', 'ADMIN'].includes(user.role) &&
                         user.permissions.includes('ManageMaintenance') && (
                             <NavLink to="/staff/maintenance" onClick={() => setOpen(false)}>

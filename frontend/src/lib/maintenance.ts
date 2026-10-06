@@ -35,3 +35,17 @@ export const requestStatuses = [
     'RESOLVED',
 ];
 export const priorities = ['Low', 'Medium', 'High', 'Urgent'];
+export interface MaintenanceWorker {
+    id: string;
+    userId: string;
+    name: string;
+    specialization: string;
+    isActive: boolean;
+}
+export interface MaintenanceAction {
+    id: string;
+    workerId: string;
+    type: number;
+    description: string;
+    createdAtUtc: string;
+}
