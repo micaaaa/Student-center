@@ -1391,3 +1391,13 @@ input[type='file'] {
 .staff-document label {
     margin-bottom: 1rem;
 }
+.competition-fields {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+}
+
+.competition-fields > label {
+    margin: 1rem 0;
+}

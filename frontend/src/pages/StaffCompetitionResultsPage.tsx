@@ -156,6 +156,11 @@ function CompetitionResults({ competition }: { competition: Competition }) {
             <Link className="text-link" to={'/staff/applications?competitionId=' + competition.id}>
                 Review competition applications
             </Link>
+            <div className="application-section">
+                <Link className="secondary" to={'/staff/competitions/' + competition.id}>
+                    Manage competition
+                </Link>
+            </div>
             <section className="panel application-section">
                 <h2>Preliminary ranking</h2>
                 {preliminary.loading ? (

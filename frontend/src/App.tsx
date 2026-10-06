@@ -14,6 +14,8 @@ import { StaffApplicationsPage } from './pages/StaffApplicationsPage';
 import { StaffApplicationPage } from './pages/StaffApplicationPage';
 import { StaffRankingsPage } from './pages/StaffRankingsPage';
 import { StaffCompetitionResultsPage } from './pages/StaffCompetitionResultsPage';
+import { StaffCompetitionsPage } from './pages/StaffCompetitionsPage';
+import { NewCompetitionPage, StaffCompetitionPage } from './pages/StaffCompetitionPage';
 
 export default function App() {
     return (
@@ -36,6 +38,18 @@ export default function App() {
                                 <Route
                                     path="/staff/applications"
                                     element={<StaffApplicationsPage />}
+                                />
+                                <Route
+                                    path="/staff/competitions"
+                                    element={<StaffCompetitionsPage />}
+                                />
+                                <Route
+                                    path="/staff/competitions/new"
+                                    element={<NewCompetitionPage />}
+                                />
+                                <Route
+                                    path="/staff/competitions/:id"
+                                    element={<StaffCompetitionPage />}
                                 />
                                 <Route path="/staff/rankings" element={<StaffRankingsPage />} />
                                 <Route

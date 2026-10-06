@@ -72,6 +72,9 @@ export function Layout() {
                     {['STAFF', 'ADMIN'].includes(user.role) &&
                         user.permissions.includes('ManageApplications') && (
                             <>
+                                <NavLink to="/staff/competitions" onClick={() => setOpen(false)}>
+                                    <CalendarDays size={19} /> Competitions
+                                </NavLink>
                                 <NavLink to="/staff/applications" onClick={() => setOpen(false)}>
                                     <Files size={19} /> Application review
                                 </NavLink>
