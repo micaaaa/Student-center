@@ -66,6 +66,12 @@ const translations: Record<string, string> = {
 };
 
 const applicationMessages = new Set([
+    'Category not found.',
+    'A category with this name already exists.',
+    'Inactive categories cannot be used for new requests.',
+    'Maintenance request not found.',
+    'Closed requests cannot be changed.',
+    'Only a submitted request can be accepted, rejected or cancelled.',
     'Meal entitlement not found.',
     'An entitlement already exists for this student, month and meal type.',
     'Allowed quantity must be positive and cannot be below the consumed quantity.',

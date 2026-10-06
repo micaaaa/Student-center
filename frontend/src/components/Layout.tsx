@@ -70,6 +70,12 @@ export function Layout() {
                 <span className="nav-label">NAVIGATION</span>
                 <nav aria-label="Main navigation">
                     {['STAFF', 'ADMIN'].includes(user.role) &&
+                        user.permissions.includes('ManageMaintenance') && (
+                            <NavLink to="/staff/maintenance" onClick={() => setOpen(false)}>
+                                <Files size={19} /> Maintenance requests
+                            </NavLink>
+                        )}
+                    {['STAFF', 'ADMIN'].includes(user.role) &&
                         user.permissions.includes('ManageFood') && (
                             <>
                                 <NavLink to="/staff/restaurants" onClick={() => setOpen(false)}>
@@ -112,6 +118,9 @@ export function Layout() {
                         <>
                             <NavLink to="/profile" onClick={() => setOpen(false)}>
                                 <UserRound size={19} /> My profile
+                            </NavLink>
+                            <NavLink to="/maintenance" onClick={() => setOpen(false)}>
+                                <Files size={19} /> Maintenance requests
                             </NavLink>
                             <NavLink to="/my-meals" onClick={() => setOpen(false)}>
                                 <Files size={19} /> My meals

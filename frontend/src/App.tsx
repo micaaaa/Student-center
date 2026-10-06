@@ -24,6 +24,10 @@ import { MyAccommodationPage } from './pages/MyAccommodationPage';
 import { RestaurantsPage } from './pages/RestaurantsPage';
 import { RestaurantPage } from './pages/RestaurantPage';
 import { MealsPage } from './pages/MealsPage';
+import { MaintenanceCategoriesPage } from './pages/MaintenanceCategoriesPage';
+import { MaintenanceRequestsPage } from './pages/MaintenanceRequestsPage';
+import { MaintenanceRequestPage } from './pages/MaintenanceRequestPage';
+import { NewMaintenancePage } from './pages/NewMaintenancePage';
 
 export default function App() {
     return (
@@ -35,6 +39,27 @@ export default function App() {
                     <Route element={<ProtectedRoute />}>
                         <Route element={<Layout />}>
                             <Route index element={<Dashboard />} />
+                            <Route
+                                element={
+                                    <ProtectedRoute
+                                        roles={['STAFF', 'ADMIN']}
+                                        permission="ManageMaintenance"
+                                    />
+                                }
+                            >
+                                <Route
+                                    path="/staff/maintenance"
+                                    element={<MaintenanceRequestsPage management />}
+                                />
+                                <Route
+                                    path="/staff/maintenance/categories"
+                                    element={<MaintenanceCategoriesPage />}
+                                />
+                                <Route
+                                    path="/staff/maintenance/:id"
+                                    element={<MaintenanceRequestPage management />}
+                                />
+                            </Route>
                             <Route
                                 element={
                                     <ProtectedRoute
@@ -104,6 +129,12 @@ export default function App() {
                                 />
                             </Route>
                             <Route element={<ProtectedRoute roles={['STUDENT']} />}>
+                                <Route path="/maintenance" element={<MaintenanceRequestsPage />} />
+                                <Route path="/maintenance/new" element={<NewMaintenancePage />} />
+                                <Route
+                                    path="/maintenance/:id"
+                                    element={<MaintenanceRequestPage />}
+                                />
                                 <Route path="/my-meals" element={<MealsPage />} />
                                 <Route path="/restaurants" element={<RestaurantsPage />} />
                                 <Route path="/restaurants/:id" element={<RestaurantPage />} />
