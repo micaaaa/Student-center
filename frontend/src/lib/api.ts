@@ -66,6 +66,14 @@ const translations: Record<string, string> = {
 };
 
 const applicationMessages = new Set([
+    'Restaurant not found.',
+    'Menu not found.',
+    'A menu already exists for this restaurant and date.',
+    'Withdraw the published menu before editing it.',
+    'Only menus of an active restaurant can be published.',
+    'Menu is already published.',
+    'Only a published menu can be withdrawn.',
+    'Price must be between 0 and 99999999.99 with at most two decimal places.',
     'You do not have a current accommodation.',
     'Received accommodation eligibility was not found.',
     'Accommodation assignment was not found.',

@@ -21,6 +21,8 @@ import { DormPage } from './pages/DormPage';
 import { AssignmentsPage } from './pages/AssignmentsPage';
 import { AssignmentPage } from './pages/AssignmentPage';
 import { MyAccommodationPage } from './pages/MyAccommodationPage';
+import { RestaurantsPage } from './pages/RestaurantsPage';
+import { RestaurantPage } from './pages/RestaurantPage';
 
 export default function App() {
     return (
@@ -32,6 +34,23 @@ export default function App() {
                     <Route element={<ProtectedRoute />}>
                         <Route element={<Layout />}>
                             <Route index element={<Dashboard />} />
+                            <Route
+                                element={
+                                    <ProtectedRoute
+                                        roles={['STAFF', 'ADMIN']}
+                                        permission="ManageFood"
+                                    />
+                                }
+                            >
+                                <Route
+                                    path="/staff/restaurants"
+                                    element={<RestaurantsPage management />}
+                                />
+                                <Route
+                                    path="/staff/restaurants/:id"
+                                    element={<RestaurantPage management />}
+                                />
+                            </Route>
                             <Route
                                 element={
                                     <ProtectedRoute
@@ -83,6 +102,8 @@ export default function App() {
                                 />
                             </Route>
                             <Route element={<ProtectedRoute roles={['STUDENT']} />}>
+                                <Route path="/restaurants" element={<RestaurantsPage />} />
+                                <Route path="/restaurants/:id" element={<RestaurantPage />} />
                                 <Route path="/my-accommodation" element={<MyAccommodationPage />} />
                                 <Route path="/profile" element={<ProfilePage />} />
                                 <Route path="/competitions" element={<CompetitionsPage />} />
