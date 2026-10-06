@@ -18,6 +18,9 @@ import { StaffCompetitionsPage } from './pages/StaffCompetitionsPage';
 import { NewCompetitionPage, StaffCompetitionPage } from './pages/StaffCompetitionPage';
 import { DormsPage } from './pages/DormsPage';
 import { DormPage } from './pages/DormPage';
+import { AssignmentsPage } from './pages/AssignmentsPage';
+import { AssignmentPage } from './pages/AssignmentPage';
+import { MyAccommodationPage } from './pages/MyAccommodationPage';
 
 export default function App() {
     return (
@@ -39,6 +42,11 @@ export default function App() {
                             >
                                 <Route path="/staff/dorms" element={<DormsPage />} />
                                 <Route path="/staff/dorms/:id" element={<DormPage />} />
+                                <Route path="/staff/assignments" element={<AssignmentsPage />} />
+                                <Route
+                                    path="/staff/accommodations/:id"
+                                    element={<AssignmentPage />}
+                                />
                             </Route>
                             <Route
                                 element={
@@ -75,6 +83,7 @@ export default function App() {
                                 />
                             </Route>
                             <Route element={<ProtectedRoute roles={['STUDENT']} />}>
+                                <Route path="/my-accommodation" element={<MyAccommodationPage />} />
                                 <Route path="/profile" element={<ProfilePage />} />
                                 <Route path="/competitions" element={<CompetitionsPage />} />
                                 <Route path="/competitions/:id" element={<CompetitionPage />} />

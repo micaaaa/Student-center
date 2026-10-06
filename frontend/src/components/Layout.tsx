@@ -71,9 +71,14 @@ export function Layout() {
                 <nav aria-label="Main navigation">
                     {['STAFF', 'ADMIN'].includes(user.role) &&
                         user.permissions.includes('ManageAccommodation') && (
-                            <NavLink to="/staff/dorms" onClick={() => setOpen(false)}>
-                                <GraduationCap size={19} /> Dormitories and rooms
-                            </NavLink>
+                            <>
+                                <NavLink to="/staff/dorms" onClick={() => setOpen(false)}>
+                                    <GraduationCap size={19} /> Dormitories and rooms
+                                </NavLink>
+                                <NavLink to="/staff/assignments" onClick={() => setOpen(false)}>
+                                    <UserRound size={19} /> Room assignments
+                                </NavLink>
+                            </>
                         )}
                     {['STAFF', 'ADMIN'].includes(user.role) &&
                         user.permissions.includes('ManageApplications') && (
@@ -96,6 +101,9 @@ export function Layout() {
                         <>
                             <NavLink to="/profile" onClick={() => setOpen(false)}>
                                 <UserRound size={19} /> My profile
+                            </NavLink>
+                            <NavLink to="/my-accommodation" onClick={() => setOpen(false)}>
+                                <GraduationCap size={19} /> My accommodation
                             </NavLink>
                             <NavLink to="/competitions" onClick={() => setOpen(false)}>
                                 <CalendarDays size={19} /> Competitions

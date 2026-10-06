@@ -66,6 +66,15 @@ const translations: Record<string, string> = {
 };
 
 const applicationMessages = new Set([
+    'You do not have a current accommodation.',
+    'Received accommodation eligibility was not found.',
+    'Accommodation assignment was not found.',
+    'The student already has an active accommodation.',
+    'An inactive dorm cannot receive assignments.',
+    'The room has no available bed.',
+    'Only an assigned accommodation can be moved into once.',
+    'Only a moved-in accommodation can be moved out of once.',
+    'Only an assigned accommodation can be cancelled.',
     'Dorm was not found.',
     'Room was not found.',
     'Dorm capacity cannot be lower than the total room capacity.',
