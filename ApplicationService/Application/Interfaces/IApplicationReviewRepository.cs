@@ -6,7 +6,7 @@ namespace StudentCenter.ApplicationService.Application.Interfaces;
 public interface IApplicationReviewRepository
 {
     Task<IReadOnlyCollection<StudentApplication>> ListAsync(
-        Guid? competitionId, ApplicationStatus? status, int page, CancellationToken ct);
+        Guid? competitionId, ApplicationStatus? status, int page, CancellationToken ct, Guid? studentId = null);
 
     Task SaveAsync(CancellationToken ct);
 }

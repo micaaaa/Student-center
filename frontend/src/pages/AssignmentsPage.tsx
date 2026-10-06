@@ -1,3 +1,4 @@
+import { StudentIdentity, StudentOption } from '../components/StudentIdentity';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useResource } from '../hooks/useResource';
@@ -12,6 +13,7 @@ export function AssignmentsPage() {
     const competitions = useResource<Competition[]>('/api/competitions');
     const [search, setSearch] = useSearchParams();
     const id = search.get('competitionId') || '';
+    const studentId = search.get('studentId') || '';
     return (
         <>
             <div className="page-heading">
@@ -21,6 +23,11 @@ export function AssignmentsPage() {
                     Assign rooms to eligible students and manage their accommodation records.
                 </p>
             </div>
+            {studentId && (
+                <p>
+                    Assigning a room to <StudentIdentity id={studentId} />
+                </p>
+            )}
             {competitions.loading ? (
                 <p role="status">Loading competitions…</p>
             ) : competitions.error ? (
@@ -31,9 +38,12 @@ export function AssignmentsPage() {
                     <select
                         value={id}
                         onChange={(event) =>
-                            setSearch(
-                                event.target.value ? { competitionId: event.target.value } : {},
-                            )
+                            setSearch({
+                                ...(studentId ? { studentId } : {}),
+                                ...(event.target.value
+                                    ? { competitionId: event.target.value }
+                                    : {}),
+                            })
                         }
                     >
                         <option value="">Select a competition</option>
@@ -45,17 +55,27 @@ export function AssignmentsPage() {
                     </select>
                 </label>
             )}
-            {id && <EligibilityList key={id} competitionId={id} />}
+            {id && (
+                <EligibilityList key={id + studentId} competitionId={id} studentId={studentId} />
+            )}
         </>
     );
 }
 
-function EligibilityList({ competitionId }: { competitionId: string }) {
+function EligibilityList({
+    competitionId,
+    studentId,
+}: {
+    competitionId: string;
+    studentId: string;
+}) {
     const eligibility = useResource<ReceivedEligibility[]>(
         '/api/competitions/' + competitionId + '/received-eligibilities',
     );
     const [selectedId, setSelectedId] = useState('');
-    const selected = eligibility.data?.find((item) => item.id === selectedId);
+    const options = eligibility.data?.filter((item) => !studentId || item.studentId === studentId);
+    const selected =
+        options?.find((item) => item.id === selectedId) || (studentId ? options?.[0] : undefined);
     if (eligibility.loading) return <p role="status">Loading eligible students…</p>;
     if (eligibility.error)
         return <RequestError error={eligibility.error} retry={eligibility.reload} />;
@@ -67,24 +87,27 @@ function EligibilityList({ competitionId }: { competitionId: string }) {
                     Refresh decisions
                 </button>
             </div>
-            {!eligibility.data?.length ? (
+            {!options?.length ? (
                 <p className="panel">
-                    No eligibility decisions have been received for this competition. Decisions
-                    become available after final ranking publication and transfer to the
-                    accommodation service.
+                    No eligibility decisions have been received for this selection. Decisions become
+                    available after final ranking publication and transfer to the accommodation
+                    service.
                 </p>
             ) : (
                 <label>
                     Eligible student
                     <select
-                        value={selectedId}
+                        value={selected?.id || ''}
                         onChange={(event) => setSelectedId(event.target.value)}
                     >
-                        <option value="">Select a student reference</option>
-                        {eligibility.data.map((item) => (
-                            <option key={item.id} value={item.id}>
-                                {item.studentId} — {item.academicYear}
-                            </option>
+                        <option value="">Select a student</option>
+                        {options.map((item) => (
+                            <StudentOption
+                                key={item.id}
+                                value={item.id}
+                                id={item.studentId}
+                                year={item.academicYear}
+                            />
                         ))}
                     </select>
                 </label>
@@ -100,7 +123,9 @@ function StudentAssignments({ eligibility }: { eligibility: ReceivedEligibility 
     );
     return (
         <>
-            <p className="record-reference">Student reference: {eligibility.studentId}</p>
+            <p>
+                <StudentIdentity id={eligibility.studentId} />
+            </p>
             <p className="muted">Eligibility received: {dateTime(eligibility.grantedAtUtc)}</p>
             {history.loading ? (
                 <p role="status">Loading accommodation records…</p>
@@ -272,7 +297,8 @@ function RoomChoice({
                 >
                     <p>
                         Reserve a bed in room {selected?.roomNumber} for student{' '}
-                        {eligibility.studentId}, academic year {eligibility.academicYear}?
+                        <StudentIdentity id={eligibility.studentId} />, academic year{' '}
+                        {eligibility.academicYear}?
                     </p>
                     <p>Move-in must be recorded separately.</p>
                 </ConfirmationDialog>

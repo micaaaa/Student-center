@@ -4,6 +4,8 @@ namespace StudentCenter.IdentityService.Application.Interfaces;
 
 public interface IUserManagementService
 {
+    Task<IReadOnlyCollection<StaffDirectoryEntry>> SearchStaffAsync(string? search, int page, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyCollection<UserResponse>> GetAllAsync(CancellationToken cancellationToken = default);
 
     Task<UserResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);

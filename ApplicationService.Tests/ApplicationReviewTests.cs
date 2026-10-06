@@ -201,7 +201,7 @@ public sealed class ApplicationReviewTests
             Task.FromResult<Stream>(new MemoryStream("%PDF-"u8.ToArray()));
 
         public Task<IReadOnlyCollection<StudentApplication>> ListAsync(
-            Guid? competitionId, ApplicationStatus? status, int page, CancellationToken ct) =>
+            Guid? competitionId, ApplicationStatus? status, int page, CancellationToken ct, Guid? studentId = null) =>
             Task.FromResult<IReadOnlyCollection<StudentApplication>>([Application]);
 
         public Task<StudentApplication?> GetForStudentAsync(Guid c, Guid s, CancellationToken ct = default) =>

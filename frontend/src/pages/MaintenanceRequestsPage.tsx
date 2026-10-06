@@ -1,3 +1,4 @@
+import { StudentIdentity } from '../components/StudentIdentity';
 import { Link, useSearchParams } from 'react-router';
 import { useResource } from '../hooks/useResource';
 import { dateTime, statusLabel } from '../lib/applications';
@@ -11,6 +12,8 @@ export function MaintenanceRequestsPage({ management = false }: { management?: b
     const page = Number.isInteger(rawPage) && rawPage > 0 && rawPage <= 107374182 ? rawPage : 1;
     const status = /^[1-7]$/.test(search.get('status') || '') ? search.get('status')! : '';
     const query = new URLSearchParams({ page: String(page), pageSize: '20' });
+    const studentId = management ? search.get('studentId') || '' : '';
+    if (studentId) query.set('studentId', studentId);
     if (status) query.set('status', status);
     const resource = useResource<MaintenanceRequest[]>(
         '/api/maintenance/requests' + (management ? '' : '/me') + '?' + query,
@@ -33,6 +36,11 @@ export function MaintenanceRequestsPage({ management = false }: { management?: b
                     </Link>
                 )}
             </div>
+            {studentId && (
+                <p>
+                    Requests for <StudentIdentity id={studentId} />
+                </p>
+            )}
             <div className="list-toolbar">
                 <label>
                     Request status
@@ -63,6 +71,11 @@ export function MaintenanceRequestsPage({ management = false }: { management?: b
                         <article className="panel competition-card" key={item.id}>
                             <StatusBadge status={requestStatuses[item.status - 1]} />
                             <h2>{item.title}</h2>
+                            {management && (
+                                <p>
+                                    <StudentIdentity id={item.studentId} />
+                                </p>
+                            )}
                             <p>Priority: {priorities[item.priority - 1]}</p>
                             <p className="muted">Submitted: {dateTime(item.createdAtUtc)}</p>
                             <Link className="secondary" to={base + '/' + item.id}>

@@ -7,6 +7,13 @@ namespace StudentCenter.IdentityService.Application.Services;
 
 public sealed class UserManagementService(IUserRepository userRepository, IAuthService authService) : IUserManagementService
 {
+    public Task<IReadOnlyCollection<StaffDirectoryEntry>> SearchStaffAsync(
+        string? search, int page, CancellationToken cancellationToken = default)
+    {
+        if (page < 1 || page > 100000 || search?.Length > 150)
+            throw new ArgumentException("Invalid staff search parameters.");
+        return userRepository.SearchStaffAsync(search?.Trim(), page, cancellationToken);
+    }
     public async Task<IReadOnlyCollection<UserResponse>> GetAllAsync(CancellationToken cancellationToken = default) =>
         (await userRepository.GetAllAsync(cancellationToken)).Select(authService.ToUserResponse).ToArray();
 

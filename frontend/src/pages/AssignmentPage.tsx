@@ -1,3 +1,4 @@
+import { StudentIdentity } from '../components/StudentIdentity';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useParams } from 'react-router';
@@ -106,7 +107,9 @@ function AssignmentRecord({
             )}
             <section className="panel">
                 <h2>Assignment details</h2>
-                <p className="record-reference">Student reference: {item.studentId}</p>
+                <p>
+                    <StudentIdentity id={item.studentId} />
+                </p>
                 <p>Academic year: {item.academicYear}</p>
                 <p>Assigned: {dateTime(item.assignedAtUtc)}</p>
                 {room.loading || dorms.loading ? (

@@ -1,3 +1,5 @@
+using StudentCenter.IdentityService.Application.DTOs;
+using StudentCenter.IdentityService.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using StudentCenter.IdentityService.Application.Interfaces;
 using StudentCenter.IdentityService.Domain.Entities;
@@ -7,6 +9,19 @@ namespace StudentCenter.IdentityService.Infrastructure.Repositories;
 
 public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepository
 {
+    public async Task<IReadOnlyCollection<StaffDirectoryEntry>> SearchStaffAsync(
+        string? search, int page, CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.Users.AsNoTracking().Where(user =>
+            (user.Role == UserRole.Staff || user.Role == UserRole.Admin) && user.Status == AccountStatus.Active);
+        foreach (var term in (search ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            query = query.Where(user => user.Username.Contains(term) || user.Email.Contains(term));
+
+        return await query.OrderBy(user => user.Username).ThenBy(user => user.Id)
+            .Skip((page - 1) * 20).Take(20)
+            .Select(user => new StaffDirectoryEntry(user.Id, user.Username, user.Email))
+            .ToArrayAsync(cancellationToken);
+    }
     public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         dbContext.Users.Include(user => user.Permissions).SingleOrDefaultAsync(user => user.Id == id, cancellationToken);
 

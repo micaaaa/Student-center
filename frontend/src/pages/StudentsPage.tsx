@@ -1,3 +1,4 @@
+import { StudentAccommodationRecords } from '../components/StudentAccommodationRecords';
 import { Link, useParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { StudentSearch } from '../components/StudentSearch';
@@ -68,7 +69,26 @@ export function StudentPage() {
                                 </div>
                             </dl>
                         </section>
+                        {user?.permissions.includes('ManageAccommodation') && (
+                            <StudentAccommodationRecords studentId={student.id} />
+                        )}
                         <div className="button-row application-section">
+                            {user?.permissions.includes('ManageApplications') && (
+                                <Link
+                                    className="primary"
+                                    to={'/staff/applications?studentId=' + student.id}
+                                >
+                                    Applications
+                                </Link>
+                            )}
+                            {user?.permissions.includes('ManageMaintenance') && (
+                                <Link
+                                    className="primary"
+                                    to={'/staff/maintenance?studentId=' + student.id}
+                                >
+                                    Repair requests
+                                </Link>
+                            )}
                             {user?.permissions.includes('ManageFood') && (
                                 <Link
                                     className="primary"

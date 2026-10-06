@@ -12,11 +12,13 @@ namespace StudentCenter.ApplicationService.Infrastructure.Repositories;
 public sealed class ApplicationReviewRepository(ApplicationDbContext db) : IApplicationReviewRepository
 {
     public async Task<IReadOnlyCollection<StudentApplication>> ListAsync(
-        Guid? competitionId, ApplicationStatus? status, int page, CancellationToken ct)
+        Guid? competitionId, ApplicationStatus? status, int page, CancellationToken ct, Guid? studentId = null)
     {
         var query = db.Applications.AsNoTracking()
             .Where(application => application.SubmittedAtUtc != null);
 
+        if (studentId.HasValue)
+            query = query.Where(application => application.StudentId == studentId.Value);
         if (competitionId.HasValue)
             query = query.Where(application => application.CompetitionId == competitionId.Value);
         if (status.HasValue)

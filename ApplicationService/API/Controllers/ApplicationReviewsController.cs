@@ -15,8 +15,8 @@ public sealed class ApplicationReviewsController(ApplicationReviewService servic
 {
     [HttpGet]
     public Task<IActionResult> List(
-        CancellationToken ct, Guid? competitionId = null, ApplicationStatus? status = null, int page = 1) =>
-        ExecuteAsync(async () => Ok(await service.ListAsync(competitionId, status, page, ct)));
+        CancellationToken ct, Guid? competitionId = null, ApplicationStatus? status = null, int page = 1, Guid? studentId = null) =>
+        ExecuteAsync(async () => Ok(await service.ListAsync(competitionId, status, page, ct, studentId)));
 
     [HttpGet("{applicationId:guid}")]
     public Task<IActionResult> Get(Guid applicationId, CancellationToken ct) =>

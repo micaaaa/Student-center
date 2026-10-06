@@ -1,3 +1,4 @@
+import { StudentIdentity } from '../components/StudentIdentity';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useParams } from 'react-router';
@@ -113,8 +114,10 @@ function ReviewRecord({
                         <dd className="record-reference">{application.id}</dd>
                     </div>
                     <div>
-                        <dt>Student reference</dt>
-                        <dd className="record-reference">{application.studentId}</dd>
+                        <dt>Student</dt>
+                        <dd>
+                            <StudentIdentity id={application.studentId} />
+                        </dd>
                     </div>
                     <div>
                         <dt>Submitted</dt>

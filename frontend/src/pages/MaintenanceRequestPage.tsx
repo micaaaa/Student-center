@@ -1,3 +1,4 @@
+import { StudentIdentity } from '../components/StudentIdentity';
 import { useState } from 'react';
 import { useParams } from 'react-router';
 import { useResource } from '../hooks/useResource';
@@ -105,7 +106,9 @@ function RequestRecord({
                 <p>Last updated: {dateTime(item.updatedAtUtc)}</p>
                 {management && (
                     <>
-                        <p className="record-reference">Student reference: {item.studentId}</p>
+                        <p>
+                            <StudentIdentity id={item.studentId} />
+                        </p>
                         <p className="record-reference">Room reference: {item.roomId}</p>
                     </>
                 )}

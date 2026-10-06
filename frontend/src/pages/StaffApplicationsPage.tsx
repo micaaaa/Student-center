@@ -1,3 +1,4 @@
+import { StudentIdentity } from '../components/StudentIdentity';
 import { Link, useSearchParams } from 'react-router';
 import { useResource } from '../hooks/useResource';
 import { dateTime } from '../lib/applications';
@@ -14,6 +15,7 @@ const statuses = [
 
 export function StaffApplicationsPage() {
     const [search, setSearch] = useSearchParams();
+    const studentId = search.get('studentId') || '';
     const competitionId = search.get('competitionId') || '';
     const status = statuses.some(([value]) => value === search.get('status'))
         ? search.get('status')!
@@ -25,6 +27,7 @@ export function StaffApplicationsPage() {
             : 1;
     const query = new URLSearchParams({ page: String(page) });
     if (competitionId) query.set('competitionId', competitionId);
+    if (studentId) query.set('studentId', studentId);
     if (status) query.set('status', status);
     const applications = useResource<StudentApplication[]>('/api/staff/applications?' + query);
     const competitions = useResource<Competition[]>('/api/competitions');
@@ -46,6 +49,11 @@ export function StaffApplicationsPage() {
                     Review submitted applications, supporting documents and assessment points.
                 </p>
             </div>
+            {studentId && (
+                <p>
+                    Applications for <StudentIdentity id={studentId} />
+                </p>
+            )}
             <div className="list-toolbar">
                 <label>
                     Competition
@@ -105,7 +113,7 @@ export function StaffApplicationsPage() {
                                         Application: {application.id}
                                     </p>
                                     <p className="record-reference muted">
-                                        Student reference: {application.studentId}
+                                        <StudentIdentity id={application.studentId} />
                                     </p>
                                     <p>Submitted: {dateTime(application.submittedAtUtc)}</p>
                                     <Link

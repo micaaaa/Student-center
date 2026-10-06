@@ -10,6 +10,18 @@ namespace StudentCenter.IdentityService.API.Controllers;
 [Authorize(Roles = "STAFF,ADMIN", Policy = "ManageMaintenance")]
 public sealed class StaffDirectoryController(IUserManagementService users) : ControllerBase
 {
+    [HttpGet]
+    public async Task<IActionResult> Search(CancellationToken ct, [FromQuery] string? search = null, [FromQuery] int page = 1)
+    {
+        try
+        {
+            return Ok(await users.SearchStaffAsync(search, page, ct));
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+    }
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id, CancellationToken ct)
     {

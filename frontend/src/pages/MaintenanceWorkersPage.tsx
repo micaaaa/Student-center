@@ -1,3 +1,4 @@
+import { StaffAccountPicker } from '../components/StaffAccountPicker';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useResource } from '../hooks/useResource';
@@ -43,7 +44,7 @@ export function MaintenanceWorkersPage() {
                             <h2>{item.name}</h2>
                             <StatusBadge status={item.isActive ? 'ACTIVE' : 'INACTIVE'} />
                             <p>{item.specialization}</p>
-                            <p className="record-reference">Staff account: {item.userId}</p>
+
                             <button
                                 className="secondary"
                                 disabled={!!editing}
@@ -91,6 +92,7 @@ function WorkerForm({
     saved: () => void;
 }) {
     const [userId, setUserId] = useState(item?.userId || '');
+    const [accountName, setAccountName] = useState('');
     const [name, setName] = useState(item?.name || '');
     const [specialization, setSpecialization] = useState(item?.specialization || '');
     const [active, setActive] = useState(item?.isActive ?? true);
@@ -104,7 +106,9 @@ function WorkerForm({
             !specialization.trim() ||
             !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(userId.trim())
         ) {
-            setError('Enter a valid staff account reference, name and specialization.');
+            setError(
+                'Select an active staff account and enter the worker name and specialization.',
+            );
             return;
         }
         setBusy(true);
@@ -135,15 +139,31 @@ function WorkerForm({
                     </p>
                 )}
                 <fieldset className="competition-fields" disabled={busy}>
-                    <label>
-                        Staff account reference
-                        <input
-                            required
-                            disabled={!!item}
-                            value={userId}
-                            onChange={(e) => setUserId(e.target.value)}
-                        />
-                    </label>
+                    {!item &&
+                        (userId ? (
+                            <div className="application-section">
+                                <p>
+                                    Selected account: <strong>{accountName}</strong>
+                                </p>
+                                <button
+                                    type="button"
+                                    className="secondary"
+                                    onClick={() => {
+                                        setUserId('');
+                                        setAccountName('');
+                                    }}
+                                >
+                                    Choose another account
+                                </button>
+                            </div>
+                        ) : (
+                            <StaffAccountPicker
+                                select={(id, username) => {
+                                    setUserId(id);
+                                    setAccountName(username);
+                                }}
+                            />
+                        ))}
                     <label>
                         Worker name
                         <input

@@ -13,14 +13,14 @@ public sealed class ApplicationReviewService(
     IDocumentStorage storage)
 {
     public async Task<IReadOnlyCollection<ApplicationResponse>> ListAsync(
-        Guid? competitionId, ApplicationStatus? status, int page, CancellationToken ct)
+        Guid? competitionId, ApplicationStatus? status, int page, CancellationToken ct, Guid? studentId = null)
     {
         if (page < 1 || page > int.MaxValue / 50)
             throw new ArgumentException("Page must be a positive number within the supported range.");
         if (status.HasValue && (!Enum.IsDefined(status.Value) || status == ApplicationStatus.Draft))
             throw new ArgumentException("Select a submitted application status.");
 
-        return (await reviews.ListAsync(competitionId, status, page, ct)).Select(Map).ToArray();
+        return (await reviews.ListAsync(competitionId, status, page, ct, studentId)).Select(Map).ToArray();
     }
 
     public async Task<ApplicationResponse> GetAsync(Guid applicationId, CancellationToken ct) =>
