@@ -1,3 +1,4 @@
+import { StaffServiceSummary } from '../components/StaffServiceSummary';
 import { StudentServiceSummary } from '../components/StudentServiceSummary';
 import { useState } from 'react';
 import { ArrowRight, UserRound } from 'lucide-react';
@@ -31,13 +32,11 @@ export function Dashboard() {
                     </Link>
                 </div>
             )}
-            {user.role === 'STUDENT' && (
-                <div className="button-row application-section">
-                    <button className="secondary" onClick={() => setVersion((value) => value + 1)}>
-                        Refresh overview
-                    </button>
-                </div>
-            )}
+            <div className="button-row application-section">
+                <button className="secondary" onClick={() => setVersion((value) => value + 1)}>
+                    Refresh overview
+                </button>
+            </div>
             <div className="service-grid">
                 {portalServices(user).map(({ id, title, description, icon: Icon, links }) => (
                     <section className="service-card" key={id} aria-labelledby={'service-' + id}>
@@ -46,6 +45,13 @@ export function Dashboard() {
                         <p>{description}</p>
                         {user.role === 'STUDENT' && (
                             <StudentServiceSummary key={version} service={id} />
+                        )}
+                        {user.role !== 'STUDENT' && (
+                            <StaffServiceSummary
+                                key={version}
+                                service={id}
+                                permissions={user.permissions}
+                            />
                         )}
                         <div className="service-actions">
                             {links.map((link, index) => (
