@@ -7,9 +7,15 @@ public sealed class NotificationDbContext(DbContextOptions<NotificationDbContext
 {
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ReceivedEvent> ReceivedEvents => Set<ReceivedEvent>();
+    public DbSet<EmailDelivery> EmailDeliveries => Set<EmailDelivery>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        var deliveries = modelBuilder.Entity<EmailDelivery>();
+        deliveries.Property(delivery => delivery.LastError).HasMaxLength(100);
+        deliveries.HasOne<Notification>().WithOne().HasForeignKey<EmailDelivery>(delivery => delivery.Id)
+            .OnDelete(DeleteBehavior.Restrict);
+        deliveries.HasIndex(delivery => new { delivery.SentAtUtc, delivery.FailedAtUtc, delivery.NextAttemptAtUtc });
         var received = modelBuilder.Entity<ReceivedEvent>();
         received.HasKey(message => message.Id);
         received.Property(message => message.Fingerprint).HasMaxLength(64).IsRequired();

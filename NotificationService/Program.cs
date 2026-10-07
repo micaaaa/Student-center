@@ -9,6 +9,7 @@ using StudentCenter.NotificationService.Infrastructure.Repositories;
 using StudentCenter.NotificationService.Infrastructure.ExternalServices;
 using StudentCenter.NotificationService.Infrastructure.Messaging;
 using StudentCenter.Messaging;
+using StudentCenter.NotificationService.Infrastructure.Email;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("NotificationDb");
@@ -55,6 +56,19 @@ builder.Services.AddScoped<StudentCenter.NotificationService.Application.Service
 builder.Services.Configure<RabbitOptions>(builder.Configuration.GetSection("RabbitMQ"));
 builder.Services.AddHostedService<NotificationConsumer>();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddOptions<EmailOptions>().Bind(builder.Configuration.GetSection("Email"))
+    .Validate(options => options.IsValid(), "Email configuration is invalid.")
+    .Validate(options => !options.Enabled
+        || builder.Configuration["InternalServices:NotificationKey"] is { Length: >= 32 and <= 256 },
+        "Configure the shared internal notification key before enabling email.")
+    .ValidateOnStart();
+builder.Services.AddHttpClient<IEmailRecipientClient, EmailRecipientClient>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+builder.Services.AddScoped<IEmailSender, EmailSender>();
+builder.Services.AddScoped<EmailDispatcher>();
+builder.Services.AddHostedService<EmailWorker>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<ICurrentNotificationOwner, CurrentNotificationOwner>(client =>
 {

@@ -20,6 +20,9 @@ public sealed class NotificationRepository(NotificationDbContext db) : INotifica
 
         db.ReceivedEvents.Add(new ReceivedEvent(message.Id, message.Fingerprint, receivedAtUtc));
         db.Notifications.AddRange(message.Notifications);
+        db.EmailDeliveries.AddRange(message.Notifications
+            .Where(notification => EmailDelivery.ShouldSend(notification.EventType))
+            .Select(notification => new EmailDelivery(notification.Id, receivedAtUtc)));
         try
         {
             // EF commits the receipt and all notifications in a single SQL transaction.
