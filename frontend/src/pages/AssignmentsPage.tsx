@@ -20,13 +20,22 @@ export function AssignmentsPage() {
                 <span className="eyebrow">ACCOMMODATION ADMINISTRATION</span>
                 <h1>Room assignments</h1>
                 <p className="muted">
-                    Assign rooms to eligible students and manage their accommodation records.
+                    Select an accommodation call, choose an eligible student, then reserve a room.
+                    Record move-in separately when the student arrives.
                 </p>
             </div>
             {studentId && (
-                <p>
-                    Assigning a room to <StudentIdentity id={studentId} />
-                </p>
+                <div className="button-row">
+                    <p>
+                        Assigning a room to <StudentIdentity id={studentId} />
+                    </p>
+                    <button
+                        className="secondary"
+                        onClick={() => setSearch(id ? { competitionId: id } : {})}
+                    >
+                        Show all eligible students
+                    </button>
+                </div>
             )}
             {competitions.loading ? (
                 <p role="status">Loading competitions…</p>
@@ -34,7 +43,7 @@ export function AssignmentsPage() {
                 <RequestError error={competitions.error} retry={competitions.reload} />
             ) : (
                 <label>
-                    Competition
+                    Accommodation call
                     <select
                         value={id}
                         onChange={(event) =>
@@ -46,7 +55,7 @@ export function AssignmentsPage() {
                             })
                         }
                     >
-                        <option value="">Select a competition</option>
+                        <option value="">Select an accommodation call</option>
                         {competitions.data?.map((item) => (
                             <option key={item.id} value={item.id}>
                                 {item.name} — {item.academicYear}
@@ -89,9 +98,9 @@ function EligibilityList({
             </div>
             {!options?.length ? (
                 <p className="panel">
-                    No eligibility decisions have been received for this selection. Decisions become
-                    available after final ranking publication and transfer to the accommodation
-                    service.
+                    {studentId && !!eligibility.data?.length
+                        ? 'This student is not among the received eligible candidates for this call. Check the student’s final result or select Show all eligible students.'
+                        : 'No eligible candidates have been received for this call yet. Check that the final ranking is published and includes students within the available places. If it is published, check the transfer between services, then select Refresh decisions.'}
                 </p>
             ) : (
                 <label>
@@ -160,7 +169,9 @@ function StudentAssignments({ eligibility }: { eligibility: ReceivedEligibility 
                                         className="secondary"
                                         to={'/staff/accommodations/' + item.id}
                                     >
-                                        Manage accommodation
+                                        {item.status === 'ASSIGNED'
+                                            ? 'Open record for move-in'
+                                            : 'Manage accommodation'}
                                     </Link>
                                 </article>
                             ))

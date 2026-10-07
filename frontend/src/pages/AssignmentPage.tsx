@@ -74,7 +74,11 @@ function AssignmentRecord({
             );
             setAction('');
             setText('');
-            setSuccess('Accommodation record updated.');
+            setSuccess(
+                action === 'move-in'
+                    ? 'Move-in recorded. Accommodation is now active and the student can report room problems when maintenance categories are available.'
+                    : 'Accommodation record updated.',
+            );
             room.reload();
         } catch (error) {
             setError(errorMessage(error));
@@ -104,6 +108,28 @@ function AssignmentRecord({
                 <p className="notice success" role="status">
                     {success}
                 </p>
+            )}
+            {item.status === 'ASSIGNED' && (
+                <section className="notice">
+                    <h2>Next step: record move-in</h2>
+                    <p>
+                        The bed is reserved. When the student arrives, verify the medical
+                        certificate and record the move-in to activate accommodation.
+                    </p>
+                    <button
+                        className="primary"
+                        disabled={busy}
+                        onClick={() => {
+                            setAction('move-in');
+                            setText('');
+                            document
+                                .getElementById('accommodation-action')
+                                ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }}
+                    >
+                        Prepare move-in
+                    </button>
+                </section>
             )}
             <section className="panel">
                 <h2>Assignment details</h2>
@@ -150,7 +176,7 @@ function AssignmentRecord({
                 )}
             </section>
             {!!allowed.length && (
-                <section className="panel application-section">
+                <section id="accommodation-action" className="panel application-section">
                     <h2>Record an action</h2>
                     <form onSubmit={submit}>
                         <label>
@@ -207,7 +233,15 @@ function AssignmentRecord({
                     onClose={() => setConfirm(false)}
                     onConfirm={save}
                 >
-                    <p>Confirm this action for student {item.studentId}?</p>
+                    <p>
+                        Confirm this action for <StudentIdentity id={item.studentId} />?
+                    </p>
+                    {action === 'move-in' && (
+                        <p>
+                            This activates the student's accommodation. Record it only after the
+                            student has arrived and the medical certificate has been verified.
+                        </p>
+                    )}
                     <p className="preserve-lines">{text}</p>
                     {action !== 'move-in' && <p>The bed will become available again.</p>}
                 </ConfirmationDialog>

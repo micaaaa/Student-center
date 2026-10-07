@@ -1,4 +1,5 @@
 import { useResource } from '../hooks/useResource';
+import { Link } from 'react-router';
 import { useOptionalResource } from '../lib/results';
 import type { MyAccommodation } from '../lib/accommodation';
 import { dateTime } from '../lib/applications';
@@ -34,7 +35,22 @@ export function MyAccommodationPage() {
                 ) : current.error ? (
                     <RequestError error={current.error} retry={current.reload} />
                 ) : current.data ? (
-                    <AccommodationDetails item={current.data} />
+                    <>
+                        <AccommodationDetails item={current.data} />
+                        {current.data.status === 'ASSIGNED' && (
+                            <p className="notice">
+                                Next step: contact the accommodation office to complete your
+                                move-in. Staff will record it after checking your medical
+                                certificate. Room problem reporting becomes available once your
+                                accommodation is active.
+                            </p>
+                        )}
+                        {current.data.status === 'ACTIVE' && (
+                            <Link className="primary" to="/maintenance/new">
+                                Report a room problem
+                            </Link>
+                        )}
+                    </>
                 ) : (
                     <p>
                         No room is currently assigned to you. Eligibility for accommodation is

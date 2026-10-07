@@ -16,6 +16,10 @@ export function MaintenanceCategoriesPage() {
                     Add category
                 </button>
             </div>
+            <p className="muted">
+                Students need at least one active category to report a room problem. Use clear names
+                such as Plumbing, Electrical or Furniture.
+            </p>
             {editing && (
                 <CategoryForm
                     key={editing === 'new' ? 'new' : editing.id}
@@ -32,9 +36,18 @@ export function MaintenanceCategoriesPage() {
             ) : resource.error ? (
                 <RequestError error={resource.error} retry={resource.reload} />
             ) : !resource.data?.length ? (
-                <p className="panel">No maintenance categories found.</p>
+                <p className="panel">
+                    Problem reporting is unavailable to students until you add an active category.
+                    Select Add category to create the first one.
+                </p>
             ) : (
                 <div className="competition-list application-section">
+                    {!resource.data.some((item) => item.isActive) && (
+                        <p className="notice">
+                            All categories are inactive. Activate an existing category or add an
+                            active one to enable new student requests.
+                        </p>
+                    )}
                     {resource.data.map((item) => (
                         <article className="panel" key={item.id}>
                             <h2>{item.name}</h2>

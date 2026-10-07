@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useResource } from '../hooks/useResource';
 import { useOptionalResource } from '../lib/results';
 import { api, errorMessage } from '../lib/api';
@@ -21,6 +21,7 @@ export function NewMaintenancePage() {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const activeCategories = categories.data?.filter((category) => category.isActive) || [];
     const ready =
         !accommodation.loading &&
         !accommodation.error &&
@@ -61,33 +62,65 @@ export function NewMaintenancePage() {
             <div className="page-heading">
                 <h1>Report a problem</h1>
                 <p className="muted">The request will be linked to your current room.</p>
+                <button
+                    className="secondary"
+                    disabled={accommodation.loading || categories.loading}
+                    onClick={() => {
+                        accommodation.reload();
+                        categories.reload();
+                    }}
+                >
+                    Refresh availability
+                </button>
             </div>
             {accommodation.loading ? (
                 <p role="status">Checking accommodation…</p>
             ) : accommodation.error ? (
                 <RequestError error={accommodation.error} retry={accommodation.reload} />
             ) : accommodation.data?.status !== 'ACTIVE' ? (
-                <p className="notice">
-                    You must have a recorded move-in and active accommodation to report a problem.
-                </p>
+                <section className="panel">
+                    <h2>
+                        {accommodation.data?.status === 'ASSIGNED'
+                            ? 'Your room is reserved'
+                            : 'No active accommodation'}
+                    </h2>
+                    <p>
+                        {accommodation.data?.status === 'ASSIGNED'
+                            ? `You have been assigned room ${accommodation.data.room.number} in ${accommodation.data.dorm.name}. Ask the accommodation office to record your move-in. You can report a room problem after this step.`
+                            : 'Room problems can be reported after a room has been assigned and the accommodation office has recorded your move-in.'}
+                    </p>
+                    <Link className="secondary" to="/my-accommodation">
+                        View my accommodation
+                    </Link>
+                </section>
             ) : (
                 <p className="panel">
                     {accommodation.data.dorm.name} · Room {accommodation.data.room.number}
                 </p>
             )}
-            {categories.loading ? (
-                <p role="status">Loading categories…</p>
-            ) : categories.error ? (
-                <RequestError error={categories.error} retry={categories.reload} />
-            ) : !categories.data?.length ? (
-                <p className="notice">No maintenance categories are currently available.</p>
-            ) : null}
+            {accommodation.data?.status === 'ACTIVE' &&
+                !accommodation.loading &&
+                !accommodation.error &&
+                (categories.loading ? (
+                    <p role="status">Loading categories…</p>
+                ) : categories.error ? (
+                    <RequestError error={categories.error} retry={categories.reload} />
+                ) : !activeCategories.length ? (
+                    <section className="panel">
+                        <h2>Problem reporting is not available yet</h2>
+                        <p>
+                            The maintenance office needs to activate a problem category before you
+                            can submit a request. Please contact the office, then refresh
+                            availability.
+                        </p>
+                    </section>
+                ) : null)}
             {error && (
                 <p className="notice error" role="alert">
                     {error}
                 </p>
             )}
-            {ready && !!categories.data?.length && (
+            {ready && !!activeCategories.length && (
                 <section className="panel">
                     <form onSubmit={submit}>
                         <fieldset className="competition-fields" disabled={busy}>
@@ -99,13 +132,11 @@ export function NewMaintenancePage() {
                                     onChange={(e) => setCategoryId(e.target.value)}
                                 >
                                     <option value="">Select a category</option>
-                                    {categories.data
-                                        .filter((c) => c.isActive)
-                                        .map((c) => (
-                                            <option key={c.id} value={c.id}>
-                                                {c.name}
-                                            </option>
-                                        ))}
+                                    {activeCategories.map((c) => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.name}
+                                        </option>
+                                    ))}
                                 </select>
                             </label>
                             <label>
