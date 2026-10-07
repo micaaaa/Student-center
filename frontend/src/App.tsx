@@ -1,3 +1,4 @@
+import { UsersPage, UserPage } from './pages/UsersPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { StudentsPage, StudentPage } from './pages/StudentsPage';
 import { BrowserRouter, Link, Route, Routes } from 'react-router';
@@ -45,6 +46,17 @@ export default function App() {
                     <Route element={<ProtectedRoute />}>
                         <Route element={<Layout />}>
                             <Route index element={<Dashboard />} />
+                            <Route
+                                element={
+                                    <ProtectedRoute
+                                        roles={['STAFF', 'ADMIN']}
+                                        permission="ManageUsers"
+                                    />
+                                }
+                            >
+                                <Route path="/staff/users" element={<UsersPage />} />
+                                <Route path="/staff/users/:id" element={<UserPage />} />
+                            </Route>
                             <Route path="/notifications" element={<NotificationsPage />} />
                             <Route
                                 element={

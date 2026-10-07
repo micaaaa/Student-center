@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StudentCenter.IdentityService.Application.DTOs;
@@ -8,9 +10,33 @@ namespace StudentCenter.IdentityService.API.Controllers;
 
 [ApiController]
 [Route("api/users")]
-[Authorize(Policy = "ManageUsers")]
-public sealed class UsersController(IUserManagementService userManagementService) : ControllerBase
+[Authorize(Roles = "STAFF,ADMIN", Policy = "ManageUsers")]
+public sealed class UsersController(IUserManagementService userManagementService) : ControllerBase, IAsyncActionFilter
 {
+    [NonAction]
+    public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var actorId))
+        {
+            context.Result = Unauthorized();
+            return;
+        }
+        UserResponse actor;
+        try { actor = await userManagementService.GetByIdAsync(actorId, context.HttpContext.RequestAborted); }
+        catch (NotFoundException) { context.Result = Unauthorized(); return; }
+        if (actor.Status != "ACTIVE" || actor.Role is not ("STAFF" or "ADMIN") || !actor.Permissions.Contains("ManageUsers"))
+        {
+            context.Result = Forbid();
+            return;
+        }
+        if (HttpMethods.IsPut(context.HttpContext.Request.Method)
+            && context.ActionArguments.TryGetValue("id", out var target) && target is Guid id && id == actorId)
+        {
+            context.Result = BadRequest(new { message = "You cannot change your own role, permissions or account status." });
+            return;
+        }
+        await next();
+    }
     [HttpGet]
     public Task<IReadOnlyCollection<UserResponse>> GetAll(CancellationToken cancellationToken) =>
         userManagementService.GetAllAsync(cancellationToken);

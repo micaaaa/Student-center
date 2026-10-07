@@ -66,6 +66,9 @@ const translations: Record<string, string> = {
 };
 
 const applicationMessages = new Set([
+    'You cannot change your own role, permissions or account status.',
+    'At least one active administrator with user management permission must remain.',
+    'Student accounts cannot have staff permissions.',
     'A charge already exists for this accommodation and billing period.',
     'Accommodation event has not been received yet. Check the reference and retry after synchronization.',
     'Accommodation must belong to this student and must not be cancelled.',

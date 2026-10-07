@@ -74,6 +74,14 @@ export function portalServices(user: User): PortalService[] {
             links: [{ label: 'Find a student', to: '/staff/students' }],
         },
     ];
+    if (user.permissions.includes('ManageUsers'))
+        services.push({
+            id: 'users',
+            title: 'Users',
+            icon: ClipboardList,
+            description: 'Manage accounts, roles and service permissions.',
+            links: [{ label: 'Manage users', to: '/staff/users' }],
+        });
     if (user.permissions.includes('ManageApplications')) {
         services.push({
             id: 'applications',

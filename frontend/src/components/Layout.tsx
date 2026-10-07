@@ -83,15 +83,11 @@ export function Layout() {
                         const active = links.some((link) =>
                             serviceLinkActive(pathname, link.to, services),
                         );
-                        if (id === 'students')
+                        if (id === 'students' || id === 'users')
                             return (
-                                <NavLink
-                                    key={id}
-                                    to="/staff/students"
-                                    onClick={() => setOpen(false)}
-                                >
+                                <NavLink key={id} to={links[0].to} onClick={() => setOpen(false)}>
                                     <Icon size={19} />
-                                    Students
+                                    {title}
                                 </NavLink>
                             );
                         return (

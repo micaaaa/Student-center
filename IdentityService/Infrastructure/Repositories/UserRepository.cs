@@ -40,6 +40,26 @@ public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepositor
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
-        dbContext.SaveChangesAsync(cancellationToken);
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, cancellationToken);
+        var administrators = await dbContext.Users.AsNoTracking()
+            .Where(user => user.Role == UserRole.Admin && user.Status == AccountStatus.Active
+                && user.Permissions.Any(permission => permission.Permission == Permission.ManageUsers))
+            .Select(user => user.Id).ToListAsync(cancellationToken);
+        if (administrators.Count > 0)
+        {
+            var remaining = administrators.Any(id =>
+            {
+                var tracked = dbContext.Users.Local.FirstOrDefault(user => user.Id == id);
+                return tracked is null || (tracked.Role == UserRole.Admin && tracked.Status == AccountStatus.Active
+                    && tracked.Permissions.Any(permission => permission.Permission == Permission.ManageUsers));
+            });
+            if (!remaining)
+                throw new StudentCenter.IdentityService.Application.Exceptions.ConflictException(
+                    "At least one active administrator with user management permission must remain.");
+        }
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+    }
 }

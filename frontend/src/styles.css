@@ -1610,3 +1610,38 @@ input[type='file'] {
     font-size: 19px;
     margin: 0;
 }
+
+.permission-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.permission-option input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+}
+
+.service-summary {
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    margin-bottom: 22px;
+    overflow-wrap: anywhere;
+}
+.service-summary strong {
+    display: block;
+    color: var(--green);
+    font-size: 16px;
+}
+.service-summary p {
+    margin: 8px 0 12px;
+}
+.meal-summary {
+    padding-left: 18px;
+    font-size: 14px;
+    margin: 0;
+}
+.service-grid {
+    margin-top: 20px;
+}
