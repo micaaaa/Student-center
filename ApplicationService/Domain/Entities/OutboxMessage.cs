@@ -9,7 +9,7 @@ public sealed class OutboxMessage
     }
 
     public Guid Id { get; private set; }
-    public Guid EligibilityId { get; private set; }
+    public Guid? EligibilityId { get; private set; }
     public string Type { get; private set; } = null!;
     public string Payload { get; private set; } = null!;
     public DateTime OccurredAtUtc { get; private set; }
@@ -20,6 +20,24 @@ public sealed class OutboxMessage
         PublishedAtUtc ??= now;
     }
 
+    public static OutboxMessage ApplicationNotification(string type, Guid applicationId, Guid studentId, Guid competitionId, DateTime occurredAtUtc)
+    {
+        if (type is not ("ApplicationSubmitted" or "PreliminaryRankingPublished" or "FinalRankingPublished"))
+            throw new ArgumentException("Unsupported application notification event.");
+        var identity = System.Text.Encoding.UTF8.GetBytes($"{type}:{applicationId}");
+        var eventId = new Guid(System.Security.Cryptography.SHA256.HashData(identity).AsSpan(0, 16));
+        return new OutboxMessage
+        {
+            Id = eventId,
+            Type = type,
+            OccurredAtUtc = occurredAtUtc,
+            Payload = JsonSerializer.Serialize(new
+            {
+                EventId = eventId, Type = type, ApplicationId = applicationId,
+                StudentId = studentId, CompetitionId = competitionId, OccurredAtUtc = occurredAtUtc
+            })
+        };
+    }
     public static OutboxMessage EligibilityGranted(AccommodationEligibility decision)
     {
         if (!decision.Eligible)

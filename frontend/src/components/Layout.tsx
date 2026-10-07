@@ -1,7 +1,9 @@
+import { NotificationBell } from './NotificationBell';
 import { PageNavigation } from './PageNavigation';
 import { useState } from 'react';
 import {
     GraduationCap,
+    Bell,
     LayoutDashboard,
     UserRound,
     LogOut,
@@ -73,6 +75,9 @@ export function Layout() {
                 <nav aria-label="Main navigation">
                     <NavLink to="/" end onClick={() => setOpen(false)}>
                         <LayoutDashboard size={19} /> Home
+                    </NavLink>
+                    <NavLink to="/notifications" onClick={() => setOpen(false)}>
+                        <Bell size={19} /> Notifications
                     </NavLink>
                     {services.map(({ id, title, icon: Icon, links }) => {
                         const active = links.some((link) =>
@@ -147,7 +152,10 @@ export function Layout() {
                     <span>
                         Student Center <span className="slash">/</span> Portal
                     </span>
-                    <span className="role-badge">{roleLabels[user.role]}</span>
+                    <div className="topbar-actions">
+                        <NotificationBell />
+                        <span className="role-badge">{roleLabels[user.role]}</span>
+                    </div>
                 </header>
                 <main id="main" className="main-content">
                     <PageNavigation />

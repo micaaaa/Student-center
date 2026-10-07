@@ -1,3 +1,4 @@
+using StudentCenter.ApplicationService.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using StudentCenter.ApplicationService.Domain.Entities;
 
@@ -15,6 +16,37 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<AccommodationEligibility> Eligibilities => Set<AccommodationEligibility>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        // Save notification events in the same transaction as the business state change.
+        ChangeTracker.DetectChanges();
+        var events = new List<OutboxMessage>();
+        foreach (var entry in ChangeTracker.Entries<StudentApplication>())
+        {
+            if (entry.State == EntityState.Modified && entry.Entity.Status == ApplicationStatus.Submitted
+                && entry.Property(x => x.Status).OriginalValue != ApplicationStatus.Submitted)
+            {
+                var item = entry.Entity;
+                events.Add(OutboxMessage.ApplicationNotification("ApplicationSubmitted", item.Id,
+                    item.StudentId, item.CompetitionId, item.SubmittedAtUtc!.Value));
+            }
+        }
+        foreach (var entry in ChangeTracker.Entries<Ranking>())
+        {
+            if (entry.State != EntityState.Modified || entry.Entity.Status != RankingStatus.Published
+                || entry.Property(x => x.Status).OriginalValue == RankingStatus.Published)
+                continue;
+            var ranking = entry.Entity;
+            var type = ranking.Type == RankingType.Final ? "FinalRankingPublished" : "PreliminaryRankingPublished";
+            foreach (var candidate in ranking.Entries)
+                events.Add(OutboxMessage.ApplicationNotification(type, candidate.ApplicationId,
+                    candidate.StudentId, ranking.CompetitionId, ranking.PublishedAtUtc!.Value));
+        }
+        foreach (var message in events)
+            if (!OutboxMessages.Local.Any(existing => existing.Id == message.Id))
+                OutboxMessages.Add(message);
+        return base.SaveChangesAsync(cancellationToken);
+    }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<StudentApplication>().Property(x => x.Status).IsConcurrencyToken();

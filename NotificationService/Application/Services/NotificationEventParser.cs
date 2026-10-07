@@ -13,6 +13,7 @@ public static class NotificationEventParser
     {
         return queue switch
         {
+            "notification.application" => type is "ApplicationSubmitted" or "PreliminaryRankingPublished" or "FinalRankingPublished",
             "notification.accommodation" => type is "AccommodationAssigned" or "StudentMovedIn"
                 or "StudentMovedOut" or "AccommodationAssignmentCancelled",
             "notification.food" => type == "MealPurchased",
@@ -57,7 +58,13 @@ public static class NotificationEventParser
         string resourceType;
         Guid resourceId;
         string? billingAmount = null;
-        if (queue == "notification.accommodation")
+        if (queue == "notification.application")
+        {
+            resourceType = type == "ApplicationSubmitted" ? "Application" : "ApplicationResults";
+            resourceId = Id(root, "ApplicationId");
+            _ = Id(root, "CompetitionId");
+        }
+        else if (queue == "notification.accommodation")
         {
             resourceType = "Accommodation";
             resourceId = Id(root, "AccommodationId");
@@ -113,6 +120,9 @@ public static class NotificationEventParser
         var (title, message) = type switch
         {
             "AccommodationAssigned" => ("Dodeljen smeštaj", "Dodeljeno vam je mesto u studentskom domu."),
+            "ApplicationSubmitted" => ("Application submitted", "Your accommodation application has been submitted. You can follow its status in My applications."),
+            "PreliminaryRankingPublished" => ("Preliminary ranking published", "The preliminary ranking is available. Review your results and the appeal deadline."),
+            "FinalRankingPublished" => ("Final ranking published", "The final ranking is available. Open your application results to view the decision."),
             "StudentMovedIn" => ("Evidentirano useljenje", "Vaše useljenje u studentski dom je evidentirano."),
             "StudentMovedOut" => ("Evidentirano iseljenje", "Vaše iseljenje iz studentskog doma je evidentirano."),
             "AccommodationAssignmentCancelled" => ("Dodela smeštaja otkazana", "Vaša dodela smeštaja je otkazana."),

@@ -1571,3 +1571,42 @@ input[type='file'] {
     align-items: center;
     gap: 8px;
 }
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+.notification-bell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-width: 44px;
+    min-height: 44px;
+    color: var(--green);
+}
+.notification-count {
+    position: absolute;
+    top: 0;
+    right: -4px;
+    background: var(--green);
+    color: white;
+    border-radius: 12px;
+    padding: 2px 5px;
+    font-size: 11px;
+}
+.notification-list {
+    display: grid;
+    gap: 16px;
+}
+.notification-card {
+    overflow-wrap: anywhere;
+}
+.notification-card.is-unread {
+    border-left: 4px solid var(--green);
+}
+.notification-card h2 {
+    font-size: 19px;
+    margin: 0;
+}

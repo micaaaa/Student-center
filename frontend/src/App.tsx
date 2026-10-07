@@ -1,3 +1,4 @@
+import { NotificationsPage } from './pages/NotificationsPage';
 import { StudentsPage, StudentPage } from './pages/StudentsPage';
 import { BrowserRouter, Link, Route, Routes } from 'react-router';
 import { AuthProvider, ProtectedRoute } from './auth/AuthContext';
@@ -44,6 +45,7 @@ export default function App() {
                     <Route element={<ProtectedRoute />}>
                         <Route element={<Layout />}>
                             <Route index element={<Dashboard />} />
+                            <Route path="/notifications" element={<NotificationsPage />} />
                             <Route
                                 element={
                                     <ProtectedRoute

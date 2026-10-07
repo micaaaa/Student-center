@@ -10,6 +10,17 @@ public sealed class EventParserTests
     private static readonly Guid StudentId = Guid.NewGuid();
     private static readonly Guid WorkerUserId = Guid.NewGuid();
 
+    [TestCase("ApplicationId")]
+    [TestCase("CompetitionId")]
+    [TestCase("StudentId")]
+    public void ApplicationEventsRequireValidIdentifiers(string field)
+    {
+        var payload = Payload("ApplicationSubmitted");
+        payload[field] = Guid.Empty;
+        Assert.Throws<ArgumentException>(() => NotificationEventParser.Parse(
+            "notification.application", "ApplicationSubmitted", payload["EventId"].ToString(),
+            JsonSerializer.SerializeToUtf8Bytes(payload)));
+    }
     private static Dictionary<string, object> Payload(string type)
     {
         return new Dictionary<string, object>
@@ -17,6 +28,8 @@ public sealed class EventParserTests
             ["EventId"] = Guid.NewGuid(),
             ["Type"] = type,
             ["StudentId"] = StudentId,
+            ["ApplicationId"] = Guid.NewGuid(),
+            ["CompetitionId"] = Guid.NewGuid(),
             ["WorkerUserId"] = WorkerUserId,
             ["WorkerId"] = Guid.NewGuid(),
             ["ActionId"] = Guid.NewGuid(),
@@ -27,6 +40,9 @@ public sealed class EventParserTests
         };
     }
 
+    [TestCase("notification.application", "ApplicationSubmitted", "Application")]
+    [TestCase("notification.application", "PreliminaryRankingPublished", "ApplicationResults")]
+    [TestCase("notification.application", "FinalRankingPublished", "ApplicationResults")]
     [TestCase("notification.accommodation", "AccommodationAssigned", "Accommodation")]
     [TestCase("notification.accommodation", "StudentMovedIn", "Accommodation")]
     [TestCase("notification.accommodation", "StudentMovedOut", "Accommodation")]
@@ -131,4 +147,3 @@ public sealed class EventParserTests
         Assert.That(modified.Fingerprint, Is.Not.EqualTo(original.Fingerprint));
     }
 }
-

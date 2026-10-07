@@ -22,13 +22,15 @@ public sealed class EligibilityOutboxPublisher(
             try
             {
                 await using var session = await RabbitSession.OpenAsync(options.Value, stoppingToken);
+                await session.DeclareApplicationQueuesAsync(stoppingToken);
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     using var scope = scopes.CreateScope();
                     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
                     var messages = await db.OutboxMessages
                         .Where(message => message.PublishedAtUtc == null
-                            && message.Type == RabbitSession.EligibilityEvent)
+                            && (message.Type == RabbitSession.EligibilityEvent || message.Type == "ApplicationSubmitted"
+                                || message.Type == "PreliminaryRankingPublished" || message.Type == "FinalRankingPublished"))
                         .OrderBy(message => message.OccurredAtUtc)
                         .ThenBy(message => message.Id)
                         .Take(50)

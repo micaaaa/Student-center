@@ -14,7 +14,7 @@ public sealed class NotificationConsumer(
     public const string RejectedQueue = "notification.rejected";
     private static readonly string[] Queues =
     [
-        "notification.accommodation", "notification.food", "notification.maintenance", "notification.billing"
+        "notification.application", "notification.accommodation", "notification.food", "notification.maintenance", "notification.billing"
     ];
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -29,6 +29,7 @@ public sealed class NotificationConsumer(
             try
             {
                 await using var session = await RabbitSession.OpenAsync(options.Value, stoppingToken);
+                await session.DeclareApplicationQueuesAsync(stoppingToken);
                 await session.DeclareAccommodationQueuesAsync(stoppingToken);
                 await session.DeclareFoodQueuesAsync(stoppingToken);
                 await session.DeclareMaintenanceQueuesAsync(stoppingToken);
