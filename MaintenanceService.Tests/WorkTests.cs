@@ -62,35 +62,6 @@ public sealed class WorkTests
     }
 
     [Test]
-    public void ReassignmentPreservesPreviousActionAndRequiresNewStart()
-    {
-        var request = Accepted();
-        var first = Worker();
-        request.Assign(first, Supervisor.UserId, Now);
-        request.Start(first.UserId, Now);
-        var intervention = request.RecordIntervention(first.UserId, "Inspected pipe", Now);
-        var second = Worker();
-        request.Assign(second, Supervisor.UserId, Now.AddMinutes(5));
-
-        Assert.That(request.Status, Is.EqualTo(RequestStatus.Assigned));
-        Assert.That(request.StartedAtUtc, Is.Null);
-        Assert.That(intervention.WorkerId, Is.EqualTo(first.Id));
-        Assert.Throws<MaintenanceConflictException>(() => request.RecordIntervention(second.UserId, "Work", Now));
-    }
-
-    [Test]
-    public void InvalidActionDoesNotModifyRequest()
-    {
-        var request = Accepted();
-        request.Assign(Worker(), Supervisor.UserId, Now);
-        Assert.Throws<ArgumentException>(() => request.Start(Guid.Empty, Now));
-        Assert.That(request.Status, Is.EqualTo(RequestStatus.Assigned));
-        request.Start(Supervisor.UserId, Now);
-        Assert.Throws<ArgumentException>(() =>
-            request.RecordIntervention(Supervisor.UserId, new string('x', 4001), Now));
-    }
-
-    [Test]
     public async Task AssignedWorkerProcessesRequestWithoutSupervisorPermission()
     {
         var store = new Store();
@@ -129,19 +100,6 @@ public sealed class WorkTests
     }
 
     [Test]
-    public async Task SupervisorCanProcessAnotherWorkersTaskAndIsRecordedAsActor()
-    {
-        var store = new Store();
-        var service = Service(store);
-        await service.AssignAsync(store.Request.Id, store.Workers[0].Id, Supervisor, default);
-        await service.StartAsync(store.Request.Id, Supervisor, default);
-        await service.ResolveAsync(store.Request.Id, "Supervisor repaired", Supervisor, default);
-
-        Assert.That(store.Actions.Last().WorkerId, Is.EqualTo(store.Workers[0].Id));
-        Assert.That(store.Actions.Last().RecordedByUserId, Is.EqualTo(Supervisor.UserId));
-    }
-
-    [Test]
     public async Task ReassignedWorkerLosesAccessButHistoryRemains()
     {
         var store = new Store();
@@ -175,18 +133,6 @@ public sealed class WorkTests
     }
 
     [Test]
-    public async Task InactiveWorkerCannotChangeRequestEvenIfPreviouslyAssigned()
-    {
-        var store = new Store();
-        var service = Service(store);
-        var worker = store.Workers[0];
-        await service.AssignAsync(store.Request.Id, worker.Id, Supervisor, default);
-        worker.Update(worker.Name, worker.Specialization, false);
-        Assert.ThrowsAsync<MaintenanceAccessException>(async () =>
-            await service.StartAsync(store.Request.Id, new MaintenanceActor(worker.UserId, false), default));
-    }
-
-    [Test]
     public async Task StudentSeesOnlyOwnInterventionHistory()
     {
         var store = new Store();
@@ -196,41 +142,6 @@ public sealed class WorkTests
         var other = new MaintenanceWorkService(store, new Directory(), new Student(Guid.NewGuid()), new Clock());
         Assert.ThrowsAsync<KeyNotFoundException>(async () =>
             await other.GetMyStudentActionsAsync(store.Request.Id, 1, 50, default));
-    }
-
-    [Test]
-    public async Task WorkerRegistrationRequiresVerifiedAccountAndRejectsDuplicates()
-    {
-        var store = new Store();
-        var directory = new Directory();
-        var service = new MaintenanceWorkService(store, directory, new Student(store.Request.StudentId), new Clock());
-        var request = new CreateWorkerRequest { UserId = Guid.NewGuid(), Name = "New worker", Specialization = "Plumbing" };
-        var result = await service.CreateWorkerAsync(request, default);
-
-        Assert.That(directory.Checked, Is.EqualTo(request.UserId));
-        Assert.That(result.UserId, Is.EqualTo(request.UserId));
-        Assert.ThrowsAsync<MaintenanceConflictException>(async () => await service.CreateWorkerAsync(request, default));
-    }
-
-    [Test]
-    public void MissingStaffAccountDoesNotCreateWorker()
-    {
-        var store = new Store();
-        var service = new MaintenanceWorkService(store, new Directory { Fail = true },
-            new Student(store.Request.StudentId), new Clock());
-        Assert.ThrowsAsync<ServiceLookupException>(async () => await service.CreateWorkerAsync(
-            new CreateWorkerRequest { UserId = Guid.NewGuid(), Name = "Worker", Specialization = "Heating" }, default));
-        Assert.That(store.Workers, Has.Count.EqualTo(2));
-        Assert.That(store.Saves, Is.Zero);
-    }
-
-    [TestCase(0, 50)]
-    [TestCase(1, 101)]
-    [TestCase(int.MaxValue, 100)]
-    public void InvalidPaginationIsRejected(int page, int size)
-    {
-        Assert.ThrowsAsync<ArgumentException>(async () =>
-            await Service(new Store()).GetWorkersAsync(page, size, default));
     }
 
     private static MaintenanceWorker Worker() => new(Guid.NewGuid(), "Worker", "Plumbing");

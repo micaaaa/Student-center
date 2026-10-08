@@ -14,24 +14,38 @@ public sealed class AuthService(
     IJwtTokenGenerator jwtTokenGenerator,
     IRefreshTokenRepository refreshTokenRepository,
     IRefreshTokenService refreshTokenService,
-    IOptions<JwtSettings> jwtOptions) : IAuthService
+    IOptions<JwtSettings> jwtOptions,
+    IStudentRegistrationClient studentRegistrationClient) : IAuthService
 {
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         var username = request.Username.Trim().ToLowerInvariant();
         var email = request.Email.Trim().ToLowerInvariant();
-        if (await userRepository.GetByUsernameAsync(username, cancellationToken) is not null)
+        var user = await userRepository.GetByUsernameAsync(username, cancellationToken);
+        if (user is not null && (!user.RegistrationPending || user.Email != email
+            || user.Status != AccountStatus.Active || user.Role != UserRole.Student
+            || !passwordHasher.Verify(request.Password, user.PasswordHash)))
         {
             throw new ConflictException("Username is already in use.");
         }
 
-        if (await userRepository.GetByEmailAsync(email, cancellationToken) is not null)
+        var emailOwner = await userRepository.GetByEmailAsync(email, cancellationToken);
+        if (emailOwner is not null && emailOwner.Id != user?.Id)
         {
             throw new ConflictException("Email is already in use.");
         }
 
-        var user = new User(username, email, passwordHasher.Hash(request.Password), UserRole.Student);
-        await userRepository.AddAsync(user, cancellationToken);
+        if (user is null)
+        {
+            user = new User(username, email, passwordHasher.Hash(request.Password), UserRole.Student,
+                registrationPending: true);
+            await userRepository.AddAsync(user, cancellationToken);
+        }
+
+        // Keep incomplete registration retryable without issuing a session before profile creation.
+        await studentRegistrationClient.CreateProfileAsync(user, request, cancellationToken);
+        user.CompleteRegistration();
+        await userRepository.SaveChangesAsync(cancellationToken);
         return await CreateResponseAsync(user, cancellationToken);
     }
 
@@ -43,6 +57,9 @@ public sealed class AuthService(
             throw new InvalidCredentialsException();
         }
 
+        if (user.RegistrationPending)
+            throw new ConflictException("Registration is incomplete. Submit the registration form again using the same username, email and password.");
+
         user.RecordSuccessfulLogin();
         await userRepository.SaveChangesAsync(cancellationToken);
         return await CreateResponseAsync(user, cancellationToken);
@@ -51,7 +68,8 @@ public sealed class AuthService(
     public async Task<AuthResponse> RefreshAsync(RefreshTokenRequest request, CancellationToken cancellationToken = default)
     {
         var refreshToken = await refreshTokenRepository.GetByTokenHashAsync(refreshTokenService.Hash(request.RefreshToken), cancellationToken);
-        if (refreshToken is null || !refreshToken.IsActive || refreshToken.User.Status != AccountStatus.Active)
+        if (refreshToken is null || !refreshToken.IsActive || refreshToken.User.Status != AccountStatus.Active
+            || refreshToken.User.RegistrationPending)
         {
             throw new InvalidCredentialsException();
         }

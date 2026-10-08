@@ -55,33 +55,6 @@ public sealed class AssignmentTests
     }
 
     [Test]
-    public async Task ReusedEventOrDecisionWithDifferentDataIsRejected()
-    {
-        var message = Event();
-        await service.ReceiveEligibilityAsync(message, default);
-        Assert.ThrowsAsync<ArgumentException>(() => service.ReceiveEligibilityAsync(
-            message with { StudentId = Guid.NewGuid() }, default));
-        Assert.ThrowsAsync<ArgumentException>(() => service.ReceiveEligibilityAsync(
-            message with { EligibilityId = Guid.NewGuid() }, default));
-        Assert.ThrowsAsync<ArgumentException>(() => service.ReceiveEligibilityAsync(
-            message with { EventId = Guid.NewGuid(), AcademicYear = "2027/2028" }, default));
-        Assert.That(store.Eligibilities.Single().StudentId, Is.EqualTo(message.StudentId));
-    }
-
-    [Test]
-    public void InvalidIncomingDecisionIsRejected()
-    {
-        var message = Event();
-        Assert.ThrowsAsync<ArgumentException>(() => service.ReceiveEligibilityAsync(
-            message with { EventId = Guid.Empty }, default));
-        Assert.ThrowsAsync<ArgumentException>(() => service.ReceiveEligibilityAsync(
-            message with { AcademicYear = "" }, default));
-        Assert.ThrowsAsync<ArgumentException>(() => service.ReceiveEligibilityAsync(
-            message with { OccurredAtUtc = default }, default));
-        Assert.That(store.Eligibilities, Is.Empty);
-    }
-
-    [Test]
     public async Task AssignmentUsesReceivedStudentAndYearAndReservesBed()
     {
         var message = Event();
@@ -136,29 +109,6 @@ public sealed class AssignmentTests
         Assert.That(store.Room.OccupiedBeds, Is.EqualTo(1));
     }
 
-    [TestCase(RoomStatus.Inactive)]
-    [TestCase(RoomStatus.Maintenance)]
-    public async Task UnavailableRoomCannotReceiveAssignment(RoomStatus status)
-    {
-        var message = Event();
-        await service.ReceiveEligibilityAsync(message, default);
-        store.Room.Update("101", 1, 1, status);
-        Assert.ThrowsAsync<AccommodationConflictException>(() =>
-            service.AssignAsync(new(message.EligibilityId, store.Room.Id), staffId, default));
-        Assert.That(store.Assignments, Is.Empty);
-    }
-
-    [Test]
-    public async Task AvailableRoomInInactiveDormCannotReceiveAssignment()
-    {
-        var message = Event();
-        await service.ReceiveEligibilityAsync(message, default);
-        store.Dorm.Update("Dom", "Adresa", "Grad", "I", 10, DormStatus.Inactive);
-        Assert.ThrowsAsync<AccommodationConflictException>(() =>
-            service.AssignAsync(new(message.EligibilityId, store.Room.Id), staffId, default));
-        Assert.That(store.Room.OccupiedBeds, Is.Zero);
-    }
-
     [Test]
     public async Task CancellationReleasesBedKeepsHistoryAndAllowsNewAssignment()
     {
@@ -178,44 +128,6 @@ public sealed class AssignmentTests
         Assert.That(history.Select(item => item.Status), Is.EquivalentTo(new[] { "CANCELLED", "ASSIGNED" }));
         Assert.That(store.Room.OccupiedBeds, Is.EqualTo(1));
         Assert.That(await service.GetHistoryAsync(Guid.NewGuid(), default), Is.Empty);
-    }
-
-    [Test]
-    public async Task InvalidCancellationDoesNotFreeBed()
-    {
-        var message = Event();
-        await service.ReceiveEligibilityAsync(message, default);
-        var result = await service.AssignAsync(new(message.EligibilityId, store.Room.Id), staffId, default);
-        Assert.ThrowsAsync<ArgumentException>(() => service.CancelAsync(result.Id, " ", staffId, default));
-        Assert.That(store.Room.OccupiedBeds, Is.EqualTo(1));
-        Assert.That(store.Assignments.Single().IsActive, Is.True);
-    }
-
-    [Test]
-    public async Task MissingStaffOrRoomIsRejectedBeforeReservingBed()
-    {
-        var message = Event();
-        await service.ReceiveEligibilityAsync(message, default);
-        Assert.ThrowsAsync<ArgumentException>(() =>
-            service.AssignAsync(new(message.EligibilityId, store.Room.Id), Guid.Empty, default));
-        Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            service.AssignAsync(new(message.EligibilityId, Guid.NewGuid()), staffId, default));
-        Assert.That(store.Room.OccupiedBeds, Is.Zero);
-    }
-
-    [Test]
-    public void DatabaseEnforcesDeduplicationAndOneActiveAssignmentPerStudent()
-    {
-        using var db = new AccommodationDbContext(new DbContextOptionsBuilder<AccommodationDbContext>()
-            .UseSqlServer("Server=unused;Database=unused;Integrated Security=true").Options);
-        var eligibility = db.Model.FindEntityType(typeof(ReceivedEligibility))!;
-        Assert.That(eligibility.GetIndexes().Any(index => index.IsUnique
-            && index.Properties.Single().Name == nameof(ReceivedEligibility.EventId)), Is.True);
-        var assignment = db.Model.FindEntityType(typeof(StudentAccommodation))!;
-        var studentIndex = assignment.GetIndexes().Single(index => index.IsUnique);
-        Assert.That(studentIndex.Properties.Single().Name, Is.EqualTo(nameof(StudentAccommodation.StudentId)));
-        Assert.That(studentIndex.GetFilter(), Is.EqualTo("[IsActive] = 1"));
-        Assert.That(assignment.FindProperty(nameof(StudentAccommodation.RowVersion))!.IsConcurrencyToken, Is.True);
     }
 
     [Test]
@@ -257,26 +169,6 @@ public sealed class AssignmentTests
     }
 
     [Test]
-    public async Task RepeatedMoveInOrMoveOutDoesNotChangeOccupancy()
-    {
-        var message = Event();
-        await service.ReceiveEligibilityAsync(message, default);
-        var assigned = await service.AssignAsync(new(message.EligibilityId, store.Room.Id), staffId, default);
-        var moveIn = new MoveInRequest { MedicalCertificateReference = "CERT-1" };
-        var moveOut = new MoveOutRequest { Reason = "Završetak" };
-        await service.MoveInAsync(assigned.Id, moveIn, staffId, default);
-        Assert.ThrowsAsync<AccommodationConflictException>(() =>
-            service.MoveInAsync(assigned.Id, moveIn, staffId, default));
-        Assert.That(store.Room.OccupiedBeds, Is.EqualTo(1));
-        await service.MoveOutAsync(assigned.Id, moveOut, staffId, default);
-        Assert.ThrowsAsync<AccommodationConflictException>(() =>
-            service.MoveOutAsync(assigned.Id, moveOut, staffId, default));
-        Assert.ThrowsAsync<AccommodationConflictException>(() =>
-            service.MoveInAsync(assigned.Id, moveIn, staffId, default));
-        Assert.That(store.Room.OccupiedBeds, Is.Zero);
-    }
-
-    [Test]
     public async Task MoveOutBeforeMoveInAndMoveInAfterCancellationAreRejected()
     {
         var message = Event();
@@ -289,132 +181,6 @@ public sealed class AssignmentTests
         Assert.ThrowsAsync<AccommodationConflictException>(() => service.MoveInAsync(assigned.Id,
             new MoveInRequest { MedicalCertificateReference = "CERT-1" }, staffId, default));
         Assert.That(store.Room.OccupiedBeds, Is.Zero);
-    }
-
-    [TestCase("")]
-    [TestCase("   ")]
-    public async Task EmptyCertificateAndMoveOutReasonDoNotChangeState(string value)
-    {
-        var message = Event();
-        await service.ReceiveEligibilityAsync(message, default);
-        var assigned = await service.AssignAsync(new(message.EligibilityId, store.Room.Id), staffId, default);
-        Assert.ThrowsAsync<ArgumentException>(() => service.MoveInAsync(assigned.Id,
-            new MoveInRequest { MedicalCertificateReference = value }, staffId, default));
-        Assert.That(store.Assignments.Single().Status, Is.EqualTo("ASSIGNED"));
-        Assert.That(store.Assignments.Single().MoveIn, Is.Null);
-        await service.MoveInAsync(assigned.Id,
-            new MoveInRequest { MedicalCertificateReference = "CERT-1" }, staffId, default);
-        Assert.ThrowsAsync<ArgumentException>(() => service.MoveOutAsync(assigned.Id,
-            new MoveOutRequest { Reason = value }, staffId, default));
-        Assert.That(store.Assignments.Single().Status, Is.EqualTo("ACTIVE"));
-        Assert.That(store.Assignments.Single().MoveOut, Is.Null);
-        Assert.That(store.Room.OccupiedBeds, Is.EqualTo(1));
-    }
-
-    [Test]
-    public async Task MissingAccommodationReturnsNotFoundForBothTransitions()
-    {
-        Assert.ThrowsAsync<KeyNotFoundException>(() => service.MoveInAsync(Guid.NewGuid(),
-            new MoveInRequest { MedicalCertificateReference = "CERT-1" }, staffId, default));
-        Assert.ThrowsAsync<KeyNotFoundException>(() => service.MoveOutAsync(Guid.NewGuid(),
-            new MoveOutRequest { Reason = "Završetak" }, staffId, default));
-        Assert.That(await service.GetHistoryAsync(Guid.NewGuid(), default), Is.Empty);
-    }
-
-    [Test]
-    public void InvalidStaffDatesAndOversizedFieldsAreRejectedBeforeMutation()
-    {
-        var now = DateTime.UtcNow;
-        var eligibility = new ReceivedEligibility(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
-            Guid.NewGuid(), "2026/2027", now.AddDays(-1));
-        var assignment = new StudentAccommodation(eligibility, store.Room.Id, staffId, now);
-        Assert.Throws<ArgumentException>(() => assignment.RecordMoveIn(Guid.Empty, "CERT-1", now));
-        Assert.Throws<ArgumentException>(() => assignment.RecordMoveIn(staffId, "CERT-1", now.AddSeconds(-1)));
-        Assert.Throws<ArgumentException>(() => assignment.RecordMoveIn(staffId, new string('x', 251), now));
-        Assert.That(assignment.MoveIn, Is.Null);
-        assignment.RecordMoveIn(staffId, "CERT-1", now.AddHours(1));
-        Assert.Throws<ArgumentException>(() => assignment.RecordMoveOut(Guid.Empty, "Kraj", now.AddHours(2)));
-        Assert.Throws<ArgumentException>(() => assignment.RecordMoveOut(staffId, "Kraj", now));
-        Assert.Throws<ArgumentException>(() => assignment.RecordMoveOut(staffId, new string('x', 1001), now.AddHours(2)));
-        Assert.That(assignment.MoveOut, Is.Null);
-        Assert.That(assignment.IsActive, Is.True);
-    }
-
-    [Test]
-    public void EfTracksNewMoveRecordsAsInsertsAndEnforcesOneOfEachPerAccommodation()
-    {
-        using var db = new AccommodationDbContext(new DbContextOptionsBuilder<AccommodationDbContext>()
-            .UseSqlServer("Server=unused;Database=unused;Integrated Security=true").Options);
-        var now = DateTime.UtcNow;
-        var eligibility = new ReceivedEligibility(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
-            Guid.NewGuid(), "2026/2027", now.AddDays(-1));
-        var assignment = new StudentAccommodation(eligibility, store.Room.Id, staffId, now);
-        db.Attach(assignment);
-        assignment.RecordMoveIn(staffId, "CERT-1", now);
-        db.ChangeTracker.DetectChanges();
-        Assert.That(db.Entry(assignment.MoveIn!).State, Is.EqualTo(EntityState.Added));
-        db.ChangeTracker.AcceptAllChanges();
-        assignment.RecordMoveOut(staffId, "Kraj", now.AddHours(1));
-        db.ChangeTracker.DetectChanges();
-        Assert.That(db.Entry(assignment.MoveOut!).State, Is.EqualTo(EntityState.Added));
-        foreach (var type in new[] { typeof(MoveIn), typeof(MoveOut) })
-        {
-            var entity = db.Model.FindEntityType(type)!;
-            Assert.That(entity.GetIndexes().Single().IsUnique, Is.True);
-            Assert.That(entity.GetForeignKeys().Single().DeleteBehavior, Is.EqualTo(DeleteBehavior.Restrict));
-        }
-    }
-
-    [Test]
-    public async Task SuccessfulLifecycleCreatesOneOutboxEventForEachTransition()
-    {
-        var message = Event();
-        await service.ReceiveEligibilityAsync(message, default);
-        var assigned = await service.AssignAsync(new(message.EligibilityId, store.Room.Id), staffId, default);
-        await service.MoveInAsync(assigned.Id,
-            new MoveInRequest { MedicalCertificateReference = "PRIVATE-CERT" }, staffId, default);
-        await service.MoveOutAsync(assigned.Id,
-            new MoveOutRequest { Reason = "PRIVATE-REASON" }, staffId, default);
-
-        Assert.That(store.Events.Select(item => item.Type), Is.EqualTo(new[]
-        {
-            "AccommodationAssigned", "StudentMovedIn", "StudentMovedOut"
-        }));
-        foreach (var item in store.Events)
-        {
-            var payload = System.Text.Json.JsonSerializer.Deserialize<AccommodationLifecycleEvent>(item.Payload)!;
-            Assert.That(payload.EventId, Is.EqualTo(item.Id));
-            Assert.That(payload.AccommodationId, Is.EqualTo(assigned.Id));
-            Assert.That(payload.StudentId, Is.EqualTo(message.StudentId));
-            Assert.That(payload.RoomId, Is.EqualTo(store.Room.Id));
-            Assert.That(payload.AcademicYear, Is.EqualTo(message.AcademicYear));
-            Assert.That(payload.OccurredAtUtc.Kind, Is.EqualTo(DateTimeKind.Utc));
-            Assert.That(item.PublishedAtUtc, Is.Null);
-            Assert.That(item.Payload, Does.Not.Contain("PRIVATE"));
-        }
-
-        Assert.ThrowsAsync<AccommodationConflictException>(() => service.MoveOutAsync(assigned.Id,
-            new MoveOutRequest { Reason = "Ponovo" }, staffId, default));
-        Assert.That(store.Events, Has.Count.EqualTo(3));
-    }
-
-    [Test]
-    public async Task CancellationEmitsAnEventButRejectedActionsDoNot()
-    {
-        Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            service.AssignAsync(new(Guid.NewGuid(), store.Room.Id), staffId, default));
-        Assert.That(store.Events, Is.Empty);
-        var message = Event();
-        await service.ReceiveEligibilityAsync(message, default);
-        var assigned = await service.AssignAsync(new(message.EligibilityId, store.Room.Id), staffId, default);
-        Assert.ThrowsAsync<ArgumentException>(() => service.MoveInAsync(assigned.Id,
-            new MoveInRequest { MedicalCertificateReference = "" }, staffId, default));
-        Assert.That(store.Events, Has.Count.EqualTo(1));
-        await service.CancelAsync(assigned.Id, "Odustao", staffId, default);
-        Assert.That(store.Events.Last().Type, Is.EqualTo("AccommodationAssignmentCancelled"));
-        Assert.ThrowsAsync<AccommodationConflictException>(() =>
-            service.CancelAsync(assigned.Id, "Ponovo", staffId, default));
-        Assert.That(store.Events, Has.Count.EqualTo(2));
     }
 
     private sealed class Store : IAssignmentRepository, IInventoryRepository

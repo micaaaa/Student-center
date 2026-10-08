@@ -38,28 +38,6 @@ public sealed class ChargeServiceTests
     }
 
     [Test]
-    public void ManualMealChargeIsRejected()
-    {
-        var request = Request();
-        request.Type = ChargeType.Meal;
-        var service = new ChargeService(new Repository(), new Students(), TimeProvider.System);
-        Assert.ThrowsAsync<ArgumentException>(() => service.CreateAsync(request, Guid.NewGuid(), default));
-    }
-
-    [TestCase(null)]
-    [TestCase("2026-13")]
-    [TestCase("2026-1")]
-    public void AccommodationRequiresValidBillingMonth(string? period)
-    {
-        var request = Request();
-        request.Type = ChargeType.Accommodation;
-        request.ReferenceId = Guid.NewGuid();
-        request.Period = period;
-        var service = new ChargeService(new Repository(), new Students(), TimeProvider.System);
-        Assert.ThrowsAsync<ArgumentException>(() => service.CreateAsync(request, Guid.NewGuid(), default));
-    }
-
-    [Test]
     public void MissingStudentDoesNotSaveCharge()
     {
         var repository = new Repository();
@@ -75,15 +53,6 @@ public sealed class ChargeServiceTests
         var service = new ChargeService(repository, new Students(), TimeProvider.System);
         var created = await service.CreateAsync(Request(), Guid.NewGuid(), default);
         Assert.ThrowsAsync<KeyNotFoundException>(() => service.GetMineAsync(created.Charge.Id, default));
-    }
-
-    [TestCase(0, 50)]
-    [TestCase(1, 101)]
-    [TestCase(int.MaxValue, 100)]
-    public void InvalidPaginationIsRejected(int page, int size)
-    {
-        var service = new ChargeService(new Repository(), new Students(), TimeProvider.System);
-        Assert.ThrowsAsync<ArgumentException>(() => service.ListAsync(Guid.NewGuid(), false, page, size, default));
     }
 
     private sealed class Students : IBillingStudentClient

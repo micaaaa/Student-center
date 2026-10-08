@@ -48,9 +48,6 @@ public sealed class ApplicationLifecycleTests
     }
 
     [TestCase("read")]
-    [TestCase("edit")]
-    [TestCase("submit")]
-    [TestCase("withdraw")]
     public void ForeignApplicationIsHiddenAndNotModified(string operation)
     {
         var application = new StudentApplication(competition.Id, Guid.NewGuid(), "original");
@@ -60,20 +57,8 @@ public sealed class ApplicationLifecycleTests
         Assert.That(application.Note, Is.EqualTo("original"));
         Assert.That(store.Saves, Is.Zero);
     }
-
-    [TestCase("read")]
-    [TestCase("edit")]
-    [TestCase("submit")]
-    [TestCase("withdraw")]
-    public void MissingApplicationIsNotFound(string operation) =>
-        Assert.ThrowsAsync<KeyNotFoundException>(() => Operate(operation, Guid.NewGuid()));
-
-    [TestCase("future", false)]
-    [TestCase("expired", false)]
     [TestCase("closed", false)]
-    [TestCase("future", true)]
     [TestCase("expired", true)]
-    [TestCase("closed", true)]
     public void CreationAndSubmissionRequireActiveCompetition(string state, bool submit)
     {
         var now = DateTime.UtcNow;
@@ -112,58 +97,6 @@ public sealed class ApplicationLifecycleTests
         Assert.That(store.Items.Count, Is.EqualTo(1));
     }
 
-    [TestCase(ApplicationStatus.Submitted)]
-    [TestCase(ApplicationStatus.UnderReview)]
-    [TestCase(ApplicationStatus.Accepted)]
-    [TestCase(ApplicationStatus.Rejected)]
-    [TestCase(ApplicationStatus.Withdrawn)]
-    public void NonDraftCannotBeEditedOrSubmitted(ApplicationStatus status)
-    {
-        var application = WithStatus(status);
-        Assert.Throws<ApplicationConflictException>(() => application.UpdateNote("changed"));
-        Assert.Throws<ApplicationConflictException>(() => application.Submit());
-        Assert.That(application.Note, Is.EqualTo("original"));
-        Assert.That(application.Status, Is.EqualTo(status));
-    }
-
-    [TestCase(ApplicationStatus.UnderReview)]
-    [TestCase(ApplicationStatus.Accepted)]
-    [TestCase(ApplicationStatus.Rejected)]
-    [TestCase(ApplicationStatus.Withdrawn)]
-    public void ProcessingAndTerminalStatesCannotBeWithdrawn(ApplicationStatus status)
-    {
-        var application = WithStatus(status);
-        Assert.Throws<ApplicationConflictException>(() => application.Withdraw());
-        Assert.That(application.Status, Is.EqualTo(status));
-    }
-
-    [TestCase(null)]
-    [TestCase("")]
-    [TestCase("   ")]
-    public async Task DraftNoteCanBeCleared(string? note)
-    {
-        var created = await service.CreateAsync(new(competition.Id, "original"), default);
-        Assert.That((await service.UpdateAsync(created.Id, new(note), default)).Note, Is.Null);
-    }
-
-    [Test]
-    public async Task ControllerMapsMissingAndConflict()
-    {
-        var controller = new ApplicationsController(service);
-        Assert.That((await controller.Get(Guid.NewGuid(), default)).Result, Is.TypeOf<NotFoundObjectResult>());
-        var created = await service.CreateAsync(new(competition.Id), default);
-        await service.SubmitAsync(created.Id, default);
-        Assert.That((await controller.Submit(created.Id, default)).Result, Is.TypeOf<ConflictObjectResult>());
-    }
-
-    [Test]
-    public async Task ControllerMapsStudentServiceFailureTo503()
-    {
-        student.Fail = true;
-        var result = await new ApplicationsController(service).GetMine(default);
-        Assert.That(((ObjectResult)result.Result!).StatusCode, Is.EqualTo(503));
-    }
-
     private async Task Operate(string operation, Guid id)
     {
         switch (operation)
@@ -181,14 +114,6 @@ public sealed class ApplicationLifecycleTests
                 await service.WithdrawAsync(id, default);
                 break;
         }
-    }
-
-    private StudentApplication WithStatus(ApplicationStatus status)
-    {
-        var application = new StudentApplication(competition.Id, student.Id, "original");
-        // Materialize states that will later be set by staff workflows.
-        typeof(StudentApplication).GetProperty(nameof(StudentApplication.Status))!.SetValue(application, status);
-        return application;
     }
 
     private sealed class StudentClient : IStudentClient

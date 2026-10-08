@@ -119,19 +119,19 @@ public static class NotificationEventParser
 
         var (title, message) = type switch
         {
-            "AccommodationAssigned" => ("Dodeljen smeštaj", "Dodeljeno vam je mesto u studentskom domu."),
+            "AccommodationAssigned" => ("Accommodation assigned", "You have been assigned a place in a student residence."),
             "ApplicationSubmitted" => ("Application submitted", "Your accommodation application has been submitted. You can follow its status in My applications."),
             "PreliminaryRankingPublished" => ("Preliminary ranking published", "The preliminary ranking is available. Review your results and the appeal deadline."),
             "FinalRankingPublished" => ("Final ranking published", "The final ranking is available. Open your application results to view the decision."),
-            "StudentMovedIn" => ("Evidentirano useljenje", "Vaše useljenje u studentski dom je evidentirano."),
-            "StudentMovedOut" => ("Evidentirano iseljenje", "Vaše iseljenje iz studentskog doma je evidentirano."),
-            "AccommodationAssignmentCancelled" => ("Dodela smeštaja otkazana", "Vaša dodela smeštaja je otkazana."),
-            "MealPurchased" => ("Kupovina obroka", "Kupovina obroka je uspešno evidentirana."),
-            "MaintenanceWorkerAssigned" => ("Dodeljen zadatak", "Dodeljen vam je zahtev za održavanje. Proverite trenutnu dodelu pre početka rada."),
-            "MaintenanceRequestResolved" => ("Kvar je rešen", "Vaš zahtev za održavanje je rešen. Detalje možete pogledati u istoriji prijave."),
-            "ChargeCreated" => ("Novo zaduženje", $"Evidentirano je novo zaduženje u iznosu od {billingAmount}."),
-            "PaymentRecorded" => ("Evidentirana uplata", $"Evidentirana je vaša uplata u iznosu od {billingAmount}."),
-            "ChargePaid" => ("Zaduženje izmireno", $"Vaše zaduženje u iznosu od {billingAmount} je u potpunosti izmireno."),
+            "StudentMovedIn" => ("Move-in recorded", "Your move-in to the student residence has been recorded."),
+            "StudentMovedOut" => ("Move-out recorded", "Your move-out from the student residence has been recorded."),
+            "AccommodationAssignmentCancelled" => ("Accommodation assignment cancelled", "Your accommodation assignment has been cancelled."),
+            "MealPurchased" => ("Meal purchase recorded", "Your meal purchase has been recorded successfully."),
+            "MaintenanceWorkerAssigned" => ("Maintenance task assigned", "A maintenance request has been assigned to you. Check the current assignment before starting work."),
+            "MaintenanceRequestResolved" => ("Maintenance request resolved", "Your maintenance request has been resolved. You can view the details in the request history."),
+            "ChargeCreated" => ("New charge", $"A new charge of {billingAmount} has been recorded."),
+            "PaymentRecorded" => ("Payment recorded", $"Your payment of {billingAmount} has been recorded."),
+            "ChargePaid" => ("Charge paid", $"Your charge of {billingAmount} has been paid in full."),
             _ => throw new ArgumentException("Unsupported notification event.")
         };
         var notification = new Notification(eventId, type!, recipientKind, recipientId,

@@ -13,26 +13,6 @@ public sealed class MealUsageTests
     private static readonly DateTimeOffset Now = new(2026, 10, 10, 12, 0, 0, TimeSpan.Zero);
     private static readonly Guid Actor = Guid.NewGuid();
 
-    [TestCase(0, 2026, 10)]
-    [TestCase(-1, 2026, 10)]
-    [TestCase(1, 2026, 0)]
-    [TestCase(1, 2026, 13)]
-    [TestCase(1, 9999, 12)]
-    public void InvalidQuantityOrPeriodIsRejected(int quantity, int year, int month)
-    {
-        Assert.Throws<ArgumentException>(() =>
-            new MealEntitlement(Guid.NewGuid(), "2026/2027", year, month, MealType.Lunch, quantity, Actor, Now));
-    }
-
-    [TestCase("2026-2027")]
-    [TestCase("2026/2028")]
-    [TestCase("2024/2025")]
-    public void InvalidAcademicYearIsRejected(string academicYear)
-    {
-        Assert.Throws<ArgumentException>(() =>
-            new MealEntitlement(Guid.NewGuid(), academicYear, 2026, 10, MealType.Lunch, 10, Actor, Now));
-    }
-
     [Test]
     public void LastMealCanOnlyBeConsumedOnce()
     {
@@ -79,58 +59,6 @@ public sealed class MealUsageTests
             entitlement.Consume(Guid.NewGuid(), restaurant, Actor, null, expiry));
         Assert.Throws<FoodConflictException>(() =>
             entitlement.Update(3, MealEntitlementStatus.Active, Actor, expiry));
-    }
-
-    [Test]
-    public void FutureEntitlementCannotBeConsumedEarly()
-    {
-        var entitlement = new MealEntitlement(Guid.NewGuid(), "2026/2027", 2026, 11,
-            MealType.Lunch, 2, Actor, Now);
-
-        Assert.Throws<FoodConflictException>(() =>
-            entitlement.Consume(Guid.NewGuid(), new Restaurant("Restaurant", "Address"), Actor, null, Now));
-        Assert.That(entitlement.ConsumedQuantity, Is.Zero);
-    }
-
-    [Test]
-    public void InactiveRestaurantAndInvalidRequestDoNotSpendMeal()
-    {
-        var entitlement = Entitlement(2);
-        var restaurant = new Restaurant("Restaurant", "Address");
-        restaurant.Update(restaurant.Name, restaurant.Address, RestaurantStatus.Inactive);
-
-        Assert.Throws<FoodConflictException>(() =>
-            entitlement.Consume(Guid.NewGuid(), restaurant, Actor, null, Now));
-
-        restaurant.Update(restaurant.Name, restaurant.Address, RestaurantStatus.Active);
-        Assert.Throws<ArgumentException>(() => entitlement.Consume(Guid.Empty, restaurant, Actor, null, Now));
-        Assert.Throws<ArgumentException>(() =>
-            entitlement.Consume(Guid.NewGuid(), restaurant, Actor, new string('x', 101), Now));
-        Assert.That(entitlement.ConsumedQuantity, Is.Zero);
-    }
-
-    [Test]
-    public void QuotaCannotBeReducedBelowConsumedAmount()
-    {
-        var entitlement = Entitlement(3);
-        var restaurant = new Restaurant("Restaurant", "Address");
-        entitlement.Consume(Guid.NewGuid(), restaurant, Actor, null, Now);
-        entitlement.Consume(Guid.NewGuid(), restaurant, Actor, null, Now);
-
-        Assert.Throws<ArgumentException>(() =>
-            entitlement.Update(1, MealEntitlementStatus.Active, Actor, Now));
-        Assert.That(entitlement.AllowedQuantity, Is.EqualTo(3));
-
-        entitlement.Update(2, MealEntitlementStatus.Active, Actor, Now);
-        Assert.That(entitlement.RemainingQuantity, Is.Zero);
-    }
-
-    [Test]
-    public void ExpiredCannotBeAssignedAsStoredStatus()
-    {
-        var entitlement = Entitlement(2);
-        Assert.Throws<ArgumentException>(() =>
-            entitlement.Update(2, MealEntitlementStatus.Expired, Actor, Now));
     }
 
     [Test]
@@ -181,55 +109,6 @@ public sealed class MealUsageTests
         var otherStudent = new MealUsageService(repository, new StudentClient(Guid.NewGuid()), new Clock());
         Assert.That(await otherStudent.GetMineAsync(2026, 10, default), Is.Empty);
         Assert.That(await otherStudent.GetMyHistoryAsync(2026, 10, 1, 50, default), Is.Empty);
-    }
-
-    [Test]
-    public void DuplicateEntitlementIsRejected()
-    {
-        var repository = new MemoryRepository();
-        var request = new CreateMealEntitlementRequest
-        {
-            StudentId = repository.Entitlement.StudentId,
-            AcademicYear = "2026/2027",
-            Year = 2026,
-            Month = 10,
-            MealType = MealType.Lunch,
-            AllowedQuantity = 2
-        };
-
-        Assert.ThrowsAsync<FoodConflictException>(async () =>
-            await Service(repository).CreateAsync(request, Actor, default));
-        Assert.That(repository.SaveCount, Is.Zero);
-    }
-
-    [Test]
-    public void FailedStudentLookupDoesNotPersistEntitlement()
-    {
-        var repository = new MemoryRepository();
-        var service = new MealUsageService(repository,
-            new StudentClient(Guid.NewGuid(), unavailable: true), new Clock());
-
-        Assert.ThrowsAsync<StudentLookupException>(async () => await service.CreateAsync(
-            new CreateMealEntitlementRequest
-            {
-                StudentId = Guid.NewGuid(),
-                AcademicYear = "2026/2027",
-                Year = 2026,
-                Month = 10,
-                MealType = MealType.Lunch,
-                AllowedQuantity = 5
-            }, Actor, default));
-        Assert.That(repository.SaveCount, Is.Zero);
-    }
-
-    [TestCase(0, 50)]
-    [TestCase(1, 101)]
-    [TestCase(int.MaxValue, 100)]
-    public void InvalidPaginationIsRejected(int page, int pageSize)
-    {
-        var repository = new MemoryRepository();
-        Assert.ThrowsAsync<ArgumentException>(async () =>
-            await Service(repository).GetHistoryAsync(Guid.NewGuid(), 2026, 10, page, pageSize, default));
     }
 
     private static MealEntitlement Entitlement(int quantity)

@@ -37,7 +37,16 @@ public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepositor
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {
         await dbContext.Users.AddAsync(user, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is Microsoft.Data.SqlClient.SqlException
+            { Number: 2601 or 2627 })
+        {
+            throw new StudentCenter.IdentityService.Application.Exceptions.ConflictException(
+                "An account with this username or email already exists. Retry registration or sign in.");
+        }
     }
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)

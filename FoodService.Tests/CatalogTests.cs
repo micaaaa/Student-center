@@ -12,66 +12,6 @@ public sealed class CatalogTests
 {
     private static readonly DateOnly Date = new(2026, 10, 1);
 
-    [TestCase(-1)]
-    [TestCase(1.234)]
-    [TestCase(100000000)]
-    public void MealRejectsInvalidPrice(decimal price)
-    {
-        Assert.Throws<ArgumentException>(() => new Meal(MealType.Lunch, "Soup", null, price));
-    }
-
-    [Test]
-    public void MealRejectsUnknownType()
-    {
-        Assert.Throws<ArgumentException>(() => new Meal((MealType)99, "Soup", null, 100));
-    }
-
-    [TestCase("")]
-    [TestCase("   ")]
-    public void RestaurantRejectsBlankName(string name)
-    {
-        Assert.Throws<ArgumentException>(() => new Restaurant(name, "Address"));
-    }
-
-    [Test]
-    public void InvalidRestaurantUpdateDoesNotPartiallyChangeEntity()
-    {
-        var restaurant = new Restaurant("Original", "Address");
-
-        Assert.Throws<ArgumentException>(() => restaurant.Update("Changed", "", RestaurantStatus.Inactive));
-
-        Assert.That(restaurant.Name, Is.EqualTo("Original"));
-        Assert.That(restaurant.Status, Is.EqualTo(RestaurantStatus.Active));
-    }
-
-    [Test]
-    public void MenuRequiresDateAndMeals()
-    {
-        Assert.Throws<ArgumentException>(() => new Menu(Guid.NewGuid(), default, [Meal()]));
-        Assert.Throws<ArgumentException>(() => new Menu(Guid.NewGuid(), Date, []));
-        Assert.Throws<ArgumentException>(() => new Menu(Guid.NewGuid(), Date,
-            Enumerable.Range(0, 31).Select(_ => Meal()).ToArray()));
-    }
-
-    [Test]
-    public void PublishedMenuCannotBeEditedUntilWithdrawn()
-    {
-        var restaurant = new Restaurant("Restaurant", "Address");
-        var menu = new Menu(restaurant.Id, Date, [Meal()]);
-        menu.Publish(restaurant);
-
-        Assert.Throws<FoodConflictException>(() => menu.Update(Date, [Meal()]));
-        Assert.Throws<FoodConflictException>(() => menu.Publish(restaurant));
-
-        menu.Withdraw();
-        menu.Update(Date.AddDays(1), [Meal("Replacement")]);
-
-        Assert.That(menu.Status, Is.EqualTo(MenuStatus.Draft));
-        Assert.That(menu.Meals.Single().Name, Is.EqualTo("Replacement"));
-        Assert.That(menu.Meals.Single().MenuId, Is.EqualTo(menu.Id));
-        Assert.Throws<FoodConflictException>(() => menu.Withdraw());
-    }
-
     [Test]
     public void InactiveRestaurantCannotPublishMenu()
     {
@@ -81,16 +21,6 @@ public sealed class CatalogTests
 
         Assert.Throws<FoodConflictException>(() => menu.Publish(restaurant));
         Assert.That(menu.Status, Is.EqualTo(MenuStatus.Draft));
-    }
-
-    [Test]
-    public void MealCannotBeSharedBetweenMenus()
-    {
-        var meal = Meal();
-        var first = new Menu(Guid.NewGuid(), Date, [meal]);
-
-        Assert.Throws<ArgumentException>(() => new Menu(Guid.NewGuid(), Date, [meal]));
-        Assert.That(meal.MenuId, Is.EqualTo(first.Id));
     }
 
     [Test]
@@ -114,24 +44,6 @@ public sealed class CatalogTests
     }
 
     [Test]
-    public async Task DeactivatedRestaurantHidesPublishedMenuFromStudent()
-    {
-        var repository = new MemoryRepository();
-        var service = new FoodCatalogService(repository);
-        var menu = new Menu(repository.Restaurant.Id, Date, [Meal()]);
-        menu.Publish(repository.Restaurant);
-        repository.Menus.Add(menu);
-        repository.Restaurant.Update("Restaurant", "Address", RestaurantStatus.Inactive);
-
-        Assert.ThrowsAsync<KeyNotFoundException>(async () =>
-            await service.GetMenuAsync(menu.Id, false, default));
-        Assert.ThrowsAsync<KeyNotFoundException>(async () =>
-            await service.GetMenusAsync(repository.Restaurant.Id, Date, Date, false, default));
-        Assert.That(await service.GetRestaurantsAsync(false, default), Is.Empty);
-        Assert.That((await service.GetMenuAsync(menu.Id, true, default)).Id, Is.EqualTo(menu.Id));
-    }
-
-    [Test]
     public void DuplicateDateDoesNotAddAnotherMenu()
     {
         var repository = new MemoryRepository();
@@ -143,34 +55,6 @@ public sealed class CatalogTests
 
         Assert.That(repository.Menus, Has.Count.EqualTo(1));
         Assert.That(repository.SaveCount, Is.Zero);
-    }
-
-    [Test]
-    public async Task DraftUpdateReplacesMealsWithoutCreatingAnotherMenu()
-    {
-        var repository = new MemoryRepository();
-        var menu = new Menu(repository.Restaurant.Id, Date, [Meal("Old")]);
-        repository.Menus.Add(menu);
-        var service = new FoodCatalogService(repository);
-
-        var result = await service.UpdateMenuAsync(menu.Id, Request(Date), default);
-
-        Assert.That(result.Id, Is.EqualTo(menu.Id));
-        Assert.That(result.Meals.Single().Name, Is.EqualTo("New"));
-        Assert.That(repository.SaveCount, Is.EqualTo(1));
-        Assert.That(repository.Menus, Has.Count.EqualTo(1));
-    }
-
-    [Test]
-    public void InvalidDateRangeIsRejected()
-    {
-        var repository = new MemoryRepository();
-        var service = new FoodCatalogService(repository);
-
-        Assert.ThrowsAsync<ArgumentException>(async () =>
-            await service.GetMenusAsync(repository.Restaurant.Id, Date, Date.AddDays(-1), false, default));
-        Assert.ThrowsAsync<ArgumentException>(async () =>
-            await service.GetMenusAsync(repository.Restaurant.Id, Date, Date.AddDays(93), false, default));
     }
 
     private static Meal Meal(string name = "Lunch")

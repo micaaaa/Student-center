@@ -8,13 +8,14 @@ public sealed class User
     {
     }
 
-    public User(string username, string email, string passwordHash, UserRole role)
+    public User(string username, string email, string passwordHash, UserRole role, bool registrationPending = false)
     {
         Id = Guid.NewGuid();
         Username = username;
         Email = email;
         PasswordHash = passwordHash;
         Role = role;
+        RegistrationPending = registrationPending;
         Status = AccountStatus.Active;
         CreatedAtUtc = DateTime.UtcNow;
     }
@@ -27,9 +28,12 @@ public sealed class User
     public AccountStatus Status { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime? LastLoginAtUtc { get; private set; }
+    public bool RegistrationPending { get; private set; }
     public ICollection<UserPermission> Permissions { get; private set; } = new List<UserPermission>();
 
     public void RecordSuccessfulLogin() => LastLoginAtUtc = DateTime.UtcNow;
+
+    public void CompleteRegistration() => RegistrationPending = false;
 
     public void ChangeRole(UserRole role) => Role = role;
 

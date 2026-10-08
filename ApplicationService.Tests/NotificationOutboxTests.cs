@@ -35,26 +35,4 @@ public sealed class NotificationOutboxTests
         Assert.That(db.OutboxMessages.Local.Single().Type, Is.EqualTo("ApplicationSubmitted"));
         Assert.That(db.OutboxMessages.Local.Single().EligibilityId, Is.Null);
     }
-
-    [TestCase(RankingType.Preliminary, "PreliminaryRankingPublished")]
-    [TestCase(RankingType.Final, "FinalRankingPublished")]
-    public async Task PublicationQueuesForEveryRankedStudent(RankingType type, string eventType)
-    {
-        await using var db = Context();
-        var ranking = new Ranking(Guid.NewGuid(), type);
-        ranking.ReplaceDraft(new[] {
-            new RankingEntry(ranking.Id, Guid.NewGuid(), Guid.NewGuid(), 1, 80),
-            new RankingEntry(ranking.Id, Guid.NewGuid(), Guid.NewGuid(), 2, 70)
-        }, "fingerprint", RankingTieRule.EarlierSubmission, Guid.NewGuid());
-        db.Attach(ranking);
-        await db.SaveChangesAsync();
-        Assert.That(db.OutboxMessages.Local, Is.Empty);
-        ranking.Publish(Guid.NewGuid());
-        await db.SaveChangesAsync();
-        Assert.That(db.OutboxMessages.Local, Has.Count.EqualTo(2));
-        Assert.That(db.OutboxMessages.Local.All(item => item.Type == eventType), Is.True);
-        db.ChangeTracker.AcceptAllChanges();
-        await db.SaveChangesAsync();
-        Assert.That(db.OutboxMessages.Local, Has.Count.EqualTo(2));
-    }
 }

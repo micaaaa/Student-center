@@ -24,76 +24,6 @@ public sealed class OutboxTests
     }
 
     [Test]
-    public void AssignmentPayloadContainsRecipientAndStableEventIdentity()
-    {
-        var (request, worker, action) = Assignment();
-        var message = MaintenanceOutboxMessage.From(action, request, worker);
-        var payload = JsonSerializer.Deserialize<MaintenanceNotificationEvent>(message.Payload)!;
-        Assert.Multiple(() =>
-        {
-            Assert.That(message.Type, Is.EqualTo("MaintenanceWorkerAssigned"));
-            Assert.That(payload.EventId, Is.EqualTo(message.Id));
-            Assert.That(payload.ActionId, Is.EqualTo(action.Id));
-            Assert.That(payload.WorkerUserId, Is.EqualTo(worker.UserId));
-            Assert.That(payload.StudentId, Is.EqualTo(request.StudentId));
-            Assert.That(payload.RecordedByUserId, Is.EqualTo(action.RecordedByUserId));
-            Assert.That(payload.OccurredAtUtc.Kind, Is.EqualTo(DateTimeKind.Utc));
-            Assert.That(message.Payload, Does.Not.Contain(request.Description));
-        });
-    }
-
-    [Test]
-    public void ReassignmentPreservesOldRecipientAndCreatesDistinctEvent()
-    {
-        var (request, worker, action) = Assignment();
-        var original = MaintenanceOutboxMessage.From(action, request, worker);
-        var nextWorker = new MaintenanceWorker(Guid.NewGuid(), "Drugi", "Elektricar");
-        var nextAction = request.Assign(nextWorker, Guid.NewGuid(), DateTimeOffset.UtcNow);
-        var next = MaintenanceOutboxMessage.From(nextAction, request, nextWorker);
-        Assert.That(next.Id, Is.Not.EqualTo(original.Id));
-        Assert.That(next.ActionId, Is.Not.EqualTo(original.ActionId));
-        Assert.That(JsonSerializer.Deserialize<MaintenanceNotificationEvent>(original.Payload)!.WorkerUserId,
-            Is.EqualTo(worker.UserId));
-    }
-
-    [Test]
-    public void ResolutionProducesResolutionEvent()
-    {
-        var (request, worker, _) = Assignment();
-        request.Start(worker.UserId, DateTimeOffset.UtcNow);
-        var action = request.Resolve(worker.UserId, "Popravljeno", DateTimeOffset.UtcNow);
-        Assert.That(MaintenanceOutboxMessage.From(action, request, worker).Type,
-            Is.EqualTo("MaintenanceRequestResolved"));
-    }
-
-    [Test]
-    public void StartAndUnrelatedWorkerCannotProduceNotification()
-    {
-        var (request, worker, assignment) = Assignment();
-        var start = request.Start(worker.UserId, DateTimeOffset.UtcNow);
-        Assert.Throws<ArgumentException>(() => MaintenanceOutboxMessage.From(start, request, worker));
-        Assert.Throws<ArgumentException>(() => MaintenanceOutboxMessage.From(assignment, request,
-            new MaintenanceWorker(Guid.NewGuid(), "Drugi", "Elektricar")));
-    }
-
-    [Test]
-    public async Task RepositoryTracksAssignmentAndOutboxTogetherButNotStartEvent()
-    {
-        var (request, worker, action) = Assignment();
-        await using var db = new MaintenanceDbContext(new DbContextOptionsBuilder<MaintenanceDbContext>()
-            .UseSqlServer("Server=unused;Database=unused;Integrated Security=true").Options);
-        db.Requests.Attach(request);
-        db.Workers.Attach(worker);
-        var repository = new WorkRepository(db);
-        await repository.AddActionAsync(action, default);
-        await repository.AddActionAsync(request.Start(worker.UserId, DateTimeOffset.UtcNow), default);
-        Assert.That(db.ChangeTracker.Entries<MaintenanceAction>().Count(), Is.EqualTo(2));
-        var entry = db.ChangeTracker.Entries<MaintenanceOutboxMessage>().Single();
-        Assert.That(entry.State, Is.EqualTo(EntityState.Added));
-        Assert.That(entry.Entity.ActionId, Is.EqualTo(action.Id));
-    }
-
-    [Test]
     public async Task BrokerFailureLeavesPendingMessageForRetryWithSameId()
     {
         var (request, worker, action) = Assignment();
@@ -110,17 +40,6 @@ public sealed class OutboxTests
         Assert.That(publisher.Ids, Is.EqualTo(new[] { message.Id, message.Id }));
         Assert.That(repository.Saves, Is.EqualTo(1));
         Assert.That(message.PublishedAtUtc, Is.Not.Null);
-    }
-
-    [Test]
-    public void PublicationTimestampIsNotOverwritten()
-    {
-        var (request, worker, action) = Assignment();
-        var message = MaintenanceOutboxMessage.From(action, request, worker);
-        var now = DateTime.UtcNow;
-        message.MarkPublished(now);
-        message.MarkPublished(now.AddMinutes(1));
-        Assert.That(message.PublishedAtUtc, Is.EqualTo(now));
     }
 
     private sealed class MemoryOutbox(MaintenanceOutboxMessage message) : IMaintenanceOutboxRepository

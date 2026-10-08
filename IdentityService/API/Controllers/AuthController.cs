@@ -24,6 +24,10 @@ public sealed class AuthController(IAuthService authService, IUserRepository use
         {
             return Conflict(new { message = exception.Message });
         }
+        catch (RegistrationUnavailableException exception)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = exception.Message });
+        }
     }
 
     [HttpPost("login")]
@@ -37,6 +41,10 @@ public sealed class AuthController(IAuthService authService, IUserRepository use
         catch (InvalidCredentialsException exception)
         {
             return Unauthorized(new { message = exception.Message });
+        }
+        catch (ConflictException exception)
+        {
+            return Conflict(new { message = exception.Message });
         }
     }
 

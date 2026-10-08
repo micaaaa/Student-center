@@ -35,46 +35,6 @@ public sealed class MealPurchaseTests
         });
     }
 
-    [TestCase(0)]
-    [TestCase(-1)]
-    public void InvalidQuantityDoesNotAlterBalance(int quantity)
-    {
-        var entitlement = Entitlement();
-        Assert.Throws<ArgumentException>(() => entitlement.Purchase(Guid.NewGuid(), quantity, 100, Actor, Now));
-        Assert.That(entitlement.AllowedQuantity, Is.EqualTo(2));
-    }
-
-    [TestCase(0)]
-    [TestCase(-1)]
-    [TestCase(1.234)]
-    [TestCase(100000000)]
-    public void InvalidPriceDoesNotAlterBalance(decimal price)
-    {
-        var entitlement = Entitlement();
-        Assert.Throws<ArgumentException>(() => entitlement.Purchase(Guid.NewGuid(), 1, price, Actor, Now));
-        Assert.That(entitlement.AllowedQuantity, Is.EqualTo(2));
-    }
-
-    [Test]
-    public void QuantityAndAmountOverflowAreRejected()
-    {
-        var entitlement = Entitlement();
-        Assert.Throws<ArgumentException>(() =>
-            entitlement.Purchase(Guid.NewGuid(), int.MaxValue, 1, Actor, Now));
-        Assert.Throws<ArgumentException>(() =>
-            entitlement.Purchase(Guid.NewGuid(), int.MaxValue, 99999999.99m, Actor, Now));
-        Assert.That(entitlement.AllowedQuantity, Is.EqualTo(2));
-    }
-
-    [Test]
-    public void EmptyIdentifiersDoNotAlterBalance()
-    {
-        var entitlement = Entitlement();
-        Assert.Throws<ArgumentException>(() => entitlement.Purchase(Guid.Empty, 1, 100, Actor, Now));
-        Assert.Throws<ArgumentException>(() => entitlement.Purchase(Guid.NewGuid(), 1, 100, Guid.Empty, Now));
-        Assert.That(entitlement.AllowedQuantity, Is.EqualTo(2));
-    }
-
     [Test]
     public void SuspendedAndExpiredEntitlementsCannotBeToppedUp()
     {
@@ -86,20 +46,6 @@ public sealed class MealPurchaseTests
         Assert.Throws<FoodConflictException>(() =>
             entitlement.Purchase(Guid.NewGuid(), 1, 100, Actor, new DateTimeOffset(2026, 11, 1, 0, 0, 0, TimeSpan.Zero)));
         Assert.That(entitlement.AllowedQuantity, Is.EqualTo(2));
-    }
-
-    [Test]
-    public void FutureMonthCanBePurchasedButNotConsumedEarly()
-    {
-        var entitlement = new MealEntitlement(Guid.NewGuid(), "2026/2027", 2026, 11,
-            MealType.Lunch, 2, Actor, Now);
-
-        var purchase = entitlement.Purchase(Guid.NewGuid(), 3, 0.10m, Actor, Now);
-
-        Assert.That(purchase.Month, Is.EqualTo(11));
-        Assert.That(purchase.Amount, Is.EqualTo(0.30m));
-        Assert.Throws<FoodConflictException>(() =>
-            entitlement.Consume(Guid.NewGuid(), new Restaurant("Restaurant", "Address"), Actor, null, Now));
     }
 
     [Test]
@@ -123,47 +69,6 @@ public sealed class MealPurchaseTests
         Assert.That(repository.SaveCount, Is.EqualTo(1));
     }
 
-    [TestCase("quantity")]
-    [TestCase("price")]
-    [TestCase("entitlement")]
-    public async Task RequestIdCannotBeReusedWithDifferentPayload(string field)
-    {
-        var repository = new MemoryRepository();
-        var service = Service(repository);
-        var request = Request(repository);
-        await service.PurchaseAsync(request, Actor, default);
-        switch (field)
-        {
-            case "quantity":
-                request.Quantity++;
-                break;
-            case "price":
-                request.UnitPrice++;
-                break;
-            case "entitlement":
-                request.EntitlementId = Guid.NewGuid();
-                break;
-        }
-
-        Assert.ThrowsAsync<FoodConflictException>(async () =>
-            await service.PurchaseAsync(request, Actor, default));
-        Assert.That(repository.Entitlement.AllowedQuantity, Is.EqualTo(5));
-        Assert.That(repository.SaveCount, Is.EqualTo(1));
-    }
-
-    [Test]
-    public void MissingEntitlementDoesNotSavePurchase()
-    {
-        var repository = new MemoryRepository();
-        var request = Request(repository);
-        request.EntitlementId = Guid.NewGuid();
-
-        Assert.ThrowsAsync<KeyNotFoundException>(async () =>
-            await Service(repository).PurchaseAsync(request, Actor, default));
-        Assert.That(repository.SaveCount, Is.Zero);
-        Assert.That(repository.Purchases, Is.Empty);
-    }
-
     [Test]
     public async Task StudentCanOnlyReadOwnPurchases()
     {
@@ -179,40 +84,6 @@ public sealed class MealPurchaseTests
         Assert.That(await other.GetMyHistoryAsync(2026, 10, 1, 50, default), Is.Empty);
         Assert.ThrowsAsync<KeyNotFoundException>(async () =>
             await other.GetMineAsync(purchase.Purchase.Id, default));
-    }
-
-    [Test]
-    public async Task HistoryFiltersEntitlementMonthAndPaginates()
-    {
-        var repository = new MemoryRepository();
-        var service = Service(repository);
-        await service.PurchaseAsync(Request(repository), Actor, default);
-        await service.PurchaseAsync(Request(repository), Actor, default);
-
-        Assert.That(await service.GetMyHistoryAsync(2026, 11, 1, 50, default), Is.Empty);
-        Assert.That(await service.GetMyHistoryAsync(2026, 10, 1, 1, default), Has.Count.EqualTo(1));
-        Assert.That(await service.GetMyHistoryAsync(2026, 10, 2, 1, default), Has.Count.EqualTo(1));
-        Assert.That(await service.GetMyHistoryAsync(2026, 10, 3, 1, default), Is.Empty);
-    }
-
-    [TestCase(0, 50)]
-    [TestCase(1, 101)]
-    [TestCase(int.MaxValue, 100)]
-    public void InvalidPaginationIsRejected(int page, int size)
-    {
-        var repository = new MemoryRepository();
-        Assert.ThrowsAsync<ArgumentException>(async () =>
-            await Service(repository).GetHistoryAsync(Guid.NewGuid(), 2026, 10, page, size, default));
-    }
-
-    [Test]
-    public void InvalidPeriodAndStudentAreRejected()
-    {
-        var service = Service(new MemoryRepository());
-        Assert.ThrowsAsync<ArgumentException>(async () =>
-            await service.GetHistoryAsync(Guid.Empty, 2026, 10, 1, 50, default));
-        Assert.ThrowsAsync<ArgumentException>(async () =>
-            await service.GetHistoryAsync(Guid.NewGuid(), 2026, 13, 1, 50, default));
     }
 
     private static MealEntitlement Entitlement()

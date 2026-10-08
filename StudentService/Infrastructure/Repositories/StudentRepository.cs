@@ -40,7 +40,16 @@ public sealed class StudentRepository(StudentDbContext dbContext) : IStudentRepo
     public async Task AddAsync(Student student, CancellationToken cancellationToken = default)
     {
         await dbContext.Students.AddAsync(student, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is Microsoft.Data.SqlClient.SqlException
+            { Number: 2601 or 2627 })
+        {
+            throw new StudentCenter.StudentService.Application.Exceptions.ConflictException(
+                "A student profile with this account or student number already exists.");
+        }
     }
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default) =>

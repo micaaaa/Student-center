@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import type { FormEvent } from 'react';
 import { Check, Pencil, Save, UserRound } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
@@ -15,12 +16,14 @@ const funding: Record<string, string> = { BUDGET: 'State-funded', SELFFINANCED: 
 
 export function ProfilePage() {
     const { user } = useAuth();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const completing = searchParams.get('complete') === 'true';
     const [profile, setProfile] = useState<Student | null>(null);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const [editing, setEditing] = useState(false);
+    const [editing, setEditing] = useState(completing);
     const [busy, setBusy] = useState(false);
     const [attempt, setAttempt] = useState(0);
 
@@ -56,17 +59,14 @@ export function ProfilePage() {
             firstName: value('firstName'),
             lastName: value('lastName'),
             email: value('email'),
-            ...(!profile
-                ? { studentNumber: value('studentNumber') }
-                : {
-                      phone: value('phone') || null,
-                      faculty: value('faculty') || null,
-                      studyProgram: value('studyProgram') || null,
-                      studyLevel: value('studyLevel') || null,
-                      yearOfStudy: value('yearOfStudy') ? Number(value('yearOfStudy')) : null,
-                      fundingType: value('fundingType') || null,
-                      address: value('address') || null,
-                  }),
+            ...(!profile ? { studentNumber: value('studentNumber') } : {}),
+            phone: value('phone') || null,
+            faculty: value('faculty') || null,
+            studyProgram: value('studyProgram') || null,
+            studyLevel: value('studyLevel') || null,
+            yearOfStudy: value('yearOfStudy') ? Number(value('yearOfStudy')) : null,
+            fundingType: value('fundingType') || null,
+            address: value('address') || null,
         };
         setBusy(true);
         setError('');
@@ -76,13 +76,10 @@ export function ProfilePage() {
                 method: profile ? 'PUT' : 'POST',
                 body: JSON.stringify(body),
             });
-            setSuccess(
-                profile
-                    ? 'Changes saved.'
-                    : 'Profile created. You can now add academic and contact details.',
-            );
+            setSuccess(profile ? 'Changes saved.' : 'Profile created.');
             setProfile(saved);
             setEditing(false);
+            setSearchParams({}, { replace: true });
         } catch (error) {
             setError(errorMessage(error));
         } finally {
@@ -113,8 +110,12 @@ export function ProfilePage() {
             <div className="page-heading heading-row">
                 <div>
                     <span className="eyebrow">STUDENT RECORD</span>
-                    <h1>My profile</h1>
-                    <p className="muted">Personal information and academic details.</p>
+                    <h1>{completing ? 'Complete your profile' : 'My profile'}</h1>
+                    <p className="muted">
+                        {completing
+                            ? 'Your account and student record are ready. Add your academic and contact details below.'
+                            : 'Personal information and academic details.'}
+                    </p>
                 </div>
                 {profile && !editing && (
                     <button
@@ -205,85 +206,80 @@ export function ProfilePage() {
                                             email.
                                         </small>
                                     </label>
-                                    {profile && (
-                                        <>
-                                            <div className="form-divider span-two">
-                                                <h3>Academic and contact information</h3>
-                                                <p className="muted">
-                                                    Dodatni podaci su opcioni i mogu se naknadno
-                                                    izmeniti.
-                                                </p>
-                                            </div>
-                                            <label className="span-two">
-                                                Faculty
-                                                <input
-                                                    name="faculty"
-                                                    maxLength={200}
-                                                    defaultValue={profile.faculty ?? ''}
-                                                />
-                                            </label>
-                                            <label>
-                                                Study programme
-                                                <input
-                                                    name="studyProgram"
-                                                    maxLength={200}
-                                                    defaultValue={profile.studyProgram ?? ''}
-                                                />
-                                            </label>
-                                            <label>
-                                                Study level
-                                                <input
-                                                    name="studyLevel"
-                                                    maxLength={100}
-                                                    placeholder="e.g. Undergraduate studies"
-                                                    defaultValue={profile.studyLevel ?? ''}
-                                                />
-                                            </label>
-                                            <label>
-                                                Year of study
-                                                <input
-                                                    name="yearOfStudy"
-                                                    type="number"
-                                                    min={1}
-                                                    max={10}
-                                                    step={1}
-                                                    defaultValue={profile.yearOfStudy ?? ''}
-                                                />
-                                            </label>
-                                            <label>
-                                                Funding type
-                                                <select
-                                                    name="fundingType"
-                                                    defaultValue={profile.fundingType ?? ''}
-                                                >
-                                                    <option value="">Not provided</option>
-                                                    <option value="BUDGET">State-funded</option>
-                                                    <option value="SELFFINANCED">
-                                                        Self-funded
-                                                    </option>
-                                                </select>
-                                            </label>
-                                            <label className="span-two">
-                                                Phone
-                                                <input
-                                                    name="phone"
-                                                    type="tel"
-                                                    maxLength={30}
-                                                    autoComplete="tel"
-                                                    defaultValue={profile.phone ?? ''}
-                                                />
-                                            </label>
-                                            <label className="span-two">
-                                                Address
-                                                <input
-                                                    name="address"
-                                                    maxLength={500}
-                                                    autoComplete="street-address"
-                                                    defaultValue={profile.address ?? ''}
-                                                />
-                                            </label>
-                                        </>
-                                    )}
+                                    <>
+                                        <div className="form-divider span-two">
+                                            <h3>Academic and contact information</h3>
+                                            <p className="muted">
+                                                These details are optional and can be updated later.
+                                            </p>
+                                        </div>
+                                        <label className="span-two">
+                                            Faculty
+                                            <input
+                                                name="faculty"
+                                                maxLength={200}
+                                                defaultValue={profile?.faculty ?? ''}
+                                            />
+                                        </label>
+                                        <label>
+                                            Study programme
+                                            <input
+                                                name="studyProgram"
+                                                maxLength={200}
+                                                defaultValue={profile?.studyProgram ?? ''}
+                                            />
+                                        </label>
+                                        <label>
+                                            Study level
+                                            <input
+                                                name="studyLevel"
+                                                maxLength={100}
+                                                placeholder="e.g. Undergraduate studies"
+                                                defaultValue={profile?.studyLevel ?? ''}
+                                            />
+                                        </label>
+                                        <label>
+                                            Year of study
+                                            <input
+                                                name="yearOfStudy"
+                                                type="number"
+                                                min={1}
+                                                max={10}
+                                                step={1}
+                                                defaultValue={profile?.yearOfStudy ?? ''}
+                                            />
+                                        </label>
+                                        <label>
+                                            Funding type
+                                            <select
+                                                name="fundingType"
+                                                defaultValue={profile?.fundingType ?? ''}
+                                            >
+                                                <option value="">Not provided</option>
+                                                <option value="BUDGET">State-funded</option>
+                                                <option value="SELFFINANCED">Self-funded</option>
+                                            </select>
+                                        </label>
+                                        <label className="span-two">
+                                            Phone
+                                            <input
+                                                name="phone"
+                                                type="tel"
+                                                maxLength={30}
+                                                autoComplete="tel"
+                                                defaultValue={profile?.phone ?? ''}
+                                            />
+                                        </label>
+                                        <label className="span-two">
+                                            Address
+                                            <input
+                                                name="address"
+                                                maxLength={500}
+                                                autoComplete="street-address"
+                                                defaultValue={profile?.address ?? ''}
+                                            />
+                                        </label>
+                                    </>
                                 </div>
                                 {error && (
                                     <div className="notice error" role="alert">
@@ -297,6 +293,7 @@ export function ProfilePage() {
                                             type="button"
                                             onClick={() => {
                                                 setEditing(false);
+                                                setSearchParams({}, { replace: true });
                                                 setError('');
                                             }}
                                         >

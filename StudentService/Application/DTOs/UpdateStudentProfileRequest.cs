@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace StudentCenter.StudentService.Application.DTOs;
 
-public sealed class UpdateStudentProfileRequest
+public class UpdateStudentProfileRequest
 {
     [Required, MaxLength(100)]
     public string FirstName { get; init; } = string.Empty;

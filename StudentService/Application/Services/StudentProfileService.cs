@@ -32,6 +32,7 @@ public sealed class StudentProfileService(IStudentRepository studentRepository) 
             request.FirstName.Trim(),
             request.LastName.Trim(),
             request.Email.Trim().ToLowerInvariant());
+        ApplyProfile(student, request);
         await studentRepository.AddAsync(student, cancellationToken);
         return ToResponse(student);
     }
@@ -58,15 +59,23 @@ public sealed class StudentProfileService(IStudentRepository studentRepository) 
 
     public async Task<StudentResponse> UpdateMyProfileAsync(Guid userId, UpdateStudentProfileRequest request, CancellationToken cancellationToken = default)
     {
+        var student = await GetByUserIdAsync(userId, cancellationToken);
+        ApplyProfile(student, request);
+        await studentRepository.SaveChangesAsync(cancellationToken);
+        return ToResponse(student);
+    }
+
+    private static void ApplyProfile(Student student, UpdateStudentProfileRequest request)
+    {
         FundingType? fundingType = null;
         if (!string.IsNullOrWhiteSpace(request.FundingType))
         {
-            if (!Enum.TryParse<FundingType>(request.FundingType, true, out var parsedFundingType))
+            if (!Enum.TryParse<FundingType>(request.FundingType, true, out var parsedFundingType)
+                || !Enum.IsDefined(parsedFundingType))
                 throw new ConflictException("Funding type is not valid.");
             fundingType = parsedFundingType;
         }
 
-        var student = await GetByUserIdAsync(userId, cancellationToken);
         student.UpdateProfile(
             request.FirstName.Trim(),
             request.LastName.Trim(),
@@ -78,8 +87,6 @@ public sealed class StudentProfileService(IStudentRepository studentRepository) 
             request.YearOfStudy,
             fundingType,
             request.Address?.Trim());
-        await studentRepository.SaveChangesAsync(cancellationToken);
-        return ToResponse(student);
     }
 
     private async Task<Student> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken) =>

@@ -16,7 +16,8 @@ export function AuthPage({ register = false }: { register?: boolean }) {
         typeof target === 'string' && target.startsWith('/') && !target.startsWith('//')
             ? target
             : '/';
-    if (!loading && user) return <Navigate to={destination} replace />;
+    if (!loading && user)
+        return <Navigate to={register ? '/profile?complete=true' : destination} replace />;
 
     async function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -26,13 +27,29 @@ export function AuthPage({ register = false }: { register?: boolean }) {
             setError('Passwords do not match.');
             return;
         }
+        if (
+            register &&
+            ['username', 'firstName', 'lastName', 'studentNumber'].some(
+                (field) => !String(form.get(field) ?? '').trim(),
+            )
+        ) {
+            setError('Complete all required fields. Values containing only spaces are not valid.');
+            return;
+        }
         setBusy(true);
         setError('');
         try {
             await authenticate(register ? 'register' : 'login', {
                 email: String(form.get('email')).trim(),
                 password,
-                ...(register ? { username: String(form.get('username')).trim() } : {}),
+                ...(register
+                    ? {
+                          username: String(form.get('username')).trim(),
+                          firstName: String(form.get('firstName')).trim(),
+                          lastName: String(form.get('lastName')).trim(),
+                          studentNumber: String(form.get('studentNumber')).trim().toUpperCase(),
+                      }
+                    : {}),
             });
         } catch (error) {
             setError(errorMessage(error));
@@ -103,7 +120,7 @@ export function AuthPage({ register = false }: { register?: boolean }) {
                     <h2>{register ? 'Student registration' : 'Sign in'}</h2>
                     <p className="muted">
                         {register
-                            ? 'Create an account to register your student profile.'
+                            ? 'Create your account and student record. You can add academic and contact details next.'
                             : 'Enter your credentials to access the portal.'}
                     </p>
                     <form onSubmit={submit}>
@@ -124,6 +141,43 @@ export function AuthPage({ register = false }: { register?: boolean }) {
                                         Use letters A–Z, numbers, periods, hyphens or underscores.
                                     </small>
                                 </label>
+                            )}
+                            {register && (
+                                <>
+                                    <div className="auth-name-fields">
+                                        <label>
+                                            First name
+                                            <input
+                                                name="firstName"
+                                                autoComplete="given-name"
+                                                required
+                                                maxLength={100}
+                                            />
+                                        </label>
+                                        <label>
+                                            Last name
+                                            <input
+                                                name="lastName"
+                                                autoComplete="family-name"
+                                                required
+                                                maxLength={100}
+                                            />
+                                        </label>
+                                    </div>
+                                    <label>
+                                        Student number
+                                        <input
+                                            name="studentNumber"
+                                            required
+                                            maxLength={30}
+                                            placeholder="e.g. RA 123/2026"
+                                        />
+                                        <small>
+                                            Enter your unique student number. It cannot be changed
+                                            through your profile.
+                                        </small>
+                                    </label>
+                                </>
                             )}
                             <label>
                                 Email address

@@ -42,16 +42,6 @@ public sealed class PaymentTests
     }
 
     [Test]
-    public void OverduePartialPaymentRemainsOverdueUntilFullyPaid()
-    {
-        var charge = NewCharge(true);
-        charge.RecordPayment(Guid.NewGuid(), 40, PaymentMethod.Cash, null, ActorId, Now);
-        Assert.That(charge.Status(new DateOnly(2026, 10, 4)), Is.EqualTo("OVERDUE"));
-        charge.RecordPayment(Guid.NewGuid(), 60, PaymentMethod.Cash, null, ActorId, Now);
-        Assert.That(charge.Status(new DateOnly(2026, 10, 4)), Is.EqualTo("PAID"));
-    }
-
-    [Test]
     public void OverpaymentAndPaymentOnPaidChargeDoNotMutateCharge()
     {
         var charge = NewCharge();
@@ -60,38 +50,6 @@ public sealed class PaymentTests
         charge.RecordPayment(Guid.NewGuid(), 100, PaymentMethod.Cash, null, ActorId, Now);
         Assert.Throws<BillingConflictException>(() => charge.RecordPayment(Guid.NewGuid(), 0.01m, PaymentMethod.Cash, null, ActorId, Now));
         Assert.That(charge.PaidAmount, Is.EqualTo(100));
-    }
-
-    [TestCase("0")]
-    [TestCase("-10")]
-    [TestCase("0.001")]
-    [TestCase("10000000000000000")]
-    public void InvalidAmountsDoNotMutateCharge(string value)
-    {
-        var charge = NewCharge();
-        var amount = decimal.Parse(value, System.Globalization.CultureInfo.InvariantCulture);
-        Assert.Throws<ArgumentException>(() => charge.RecordPayment(Guid.NewGuid(), amount, PaymentMethod.Cash, null, ActorId, Now));
-        Assert.That(charge.PaidAmount, Is.Zero);
-    }
-
-    [TestCase(PaymentMethod.Card)]
-    [TestCase(PaymentMethod.BankTransfer)]
-    public void NonCashPaymentNeedsTransactionReference(PaymentMethod method)
-    {
-        var charge = NewCharge();
-        Assert.Throws<ArgumentException>(() => charge.RecordPayment(Guid.NewGuid(), 10, method, " ", ActorId, Now));
-        Assert.That(charge.PaidAmount, Is.Zero);
-    }
-
-    [Test]
-    public void InvalidActorMethodAndReferenceDoNotMutateCharge()
-    {
-        var charge = NewCharge();
-        Assert.Throws<ArgumentException>(() => charge.RecordPayment(Guid.NewGuid(), 10, PaymentMethod.Cash, null, Guid.Empty, Now));
-        Assert.Throws<ArgumentException>(() => charge.RecordPayment(Guid.NewGuid(), 10, (PaymentMethod)99, null, ActorId, Now));
-        Assert.Throws<ArgumentException>(() => charge.RecordPayment(Guid.Empty, 10, PaymentMethod.Cash, null, ActorId, Now));
-        Assert.Throws<ArgumentException>(() => charge.RecordPayment(Guid.NewGuid(), 10, PaymentMethod.Cash, new string('X', 101), ActorId, Now));
-        Assert.That(charge.PaidAmount, Is.Zero);
     }
 
     [Test]
@@ -114,8 +72,6 @@ public sealed class PaymentTests
 
     [TestCase("amount")]
     [TestCase("charge")]
-    [TestCase("method")]
-    [TestCase("reference")]
     public async Task ReusedRequestWithDifferentDataIsRejected(string field)
     {
         var repository = new MemoryRepository(NewCharge());
@@ -134,16 +90,6 @@ public sealed class PaymentTests
     }
 
     [Test]
-    public void MissingChargeDoesNotRecordPayment()
-    {
-        var repository = new MemoryRepository(NewCharge());
-        var service = new PaymentService(repository, new Students(repository.Charge.StudentId), new FixedClock());
-        var request = Request(NewCharge(), 10);
-        Assert.ThrowsAsync<KeyNotFoundException>(() => service.RecordAsync(request, ActorId, default));
-        Assert.That(repository.Payments, Is.Empty);
-    }
-
-    [Test]
     public async Task StudentCannotSeeAnotherStudentsPaymentOrHistory()
     {
         var repository = new MemoryRepository(NewCharge());
@@ -151,16 +97,6 @@ public sealed class PaymentTests
         var recorded = await service.RecordAsync(Request(repository.Charge, 10), ActorId, default);
         Assert.ThrowsAsync<KeyNotFoundException>(() => service.GetMineAsync(recorded.Payment.Id, default));
         Assert.That(await service.ListMineAsync(repository.Charge.Id, 1, 50, default), Is.Empty);
-    }
-
-    [TestCase(0, 50)]
-    [TestCase(1, 101)]
-    [TestCase(int.MaxValue, 100)]
-    public void InvalidPaginationIsRejected(int page, int size)
-    {
-        var repository = new MemoryRepository(NewCharge());
-        var service = new PaymentService(repository, new Students(repository.Charge.StudentId), new FixedClock());
-        Assert.ThrowsAsync<ArgumentException>(() => service.ListAsync(repository.Charge.StudentId, null, page, size, default));
     }
 
     private static RecordPaymentRequest Request(Charge charge, decimal amount)

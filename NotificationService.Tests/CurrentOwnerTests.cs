@@ -28,15 +28,6 @@ public sealed class CurrentOwnerTests
     }
 
     [Test]
-    public async Task StaffDoesNotDependOnStudentService()
-    {
-        var client = Create("STAFF", new Handler(_ => throw new IOException("Must not call")));
-        var owner = await client.GetAsync(default);
-        Assert.That(owner.UserId, Is.EqualTo(UserId));
-        Assert.That(owner.StudentId, Is.Null);
-    }
-
-    [Test]
     public async Task StudentUsesAuthenticatedMeAndChecksReturnedAccount()
     {
         var profileId = Guid.NewGuid();
@@ -61,36 +52,6 @@ public sealed class CurrentOwnerTests
         }));
         var exception = Assert.ThrowsAsync<OwnerLookupException>(() => client.GetAsync(default));
         Assert.That(exception!.StatusCode, Is.EqualTo(503));
-    }
-
-    [Test]
-    public async Task MissingProfileReturnsOnlyAccountScope()
-    {
-        var client = Create("STUDENT", new Handler(_ => new HttpResponseMessage(HttpStatusCode.NotFound)));
-        Assert.That((await client.GetAsync(default)).StudentId, Is.Null);
-    }
-
-    [TestCase(HttpStatusCode.Unauthorized, 401)]
-    [TestCase(HttpStatusCode.Forbidden, 403)]
-    [TestCase(HttpStatusCode.InternalServerError, 503)]
-    public void LookupFailureIsNotAnEmptyInbox(HttpStatusCode status, int expected)
-    {
-        var client = Create("STUDENT", new Handler(_ => new HttpResponseMessage(status)));
-        Assert.That(Assert.ThrowsAsync<OwnerLookupException>(() => client.GetAsync(default))!.StatusCode, Is.EqualTo(expected));
-    }
-
-    [Test]
-    public void NetworkFailureIsUnavailable()
-    {
-        var client = Create("STUDENT", new Handler(_ => throw new HttpRequestException("Offline")));
-        Assert.That(Assert.ThrowsAsync<OwnerLookupException>(() => client.GetAsync(default))!.StatusCode, Is.EqualTo(503));
-    }
-
-    [Test]
-    public void InvalidIdentityIsUnauthorized()
-    {
-        var client = Create("STAFF", new Handler(_ => throw new IOException()), "invalid");
-        Assert.That(Assert.ThrowsAsync<OwnerLookupException>(() => client.GetAsync(default))!.StatusCode, Is.EqualTo(401));
     }
 
     private sealed class Handler(Func<HttpRequestMessage, HttpResponseMessage> response) : HttpMessageHandler

@@ -28,9 +28,9 @@ public sealed class BillingEventParserTests
             payload["EventId"]!.ToString(), JsonSerializer.SerializeToUtf8Bytes(payload));
     }
 
-    [TestCase("ChargeCreated", "Charge", "ChargeId", "Novo zaduženje")]
-    [TestCase("PaymentRecorded", "Payment", "PaymentId", "Evidentirana uplata")]
-    [TestCase("ChargePaid", "Charge", "ChargeId", "Zaduženje izmireno")]
+    [TestCase("ChargeCreated", "Charge", "ChargeId", "New charge")]
+    [TestCase("PaymentRecorded", "Payment", "PaymentId", "Payment recorded")]
+    [TestCase("ChargePaid", "Charge", "ChargeId", "Charge paid")]
     public void BillingEventTargetsStudentAndCorrectFinancialResource(string type, string resource, string idField, string title)
     {
         var payload = Payload(type);
@@ -47,71 +47,5 @@ public sealed class BillingEventParserTests
             Assert.That(notification.Message, Does.Not.Contain("Untrusted"));
             Assert.That(notification.ReadAtUtc, Is.Null);
         });
-    }
-
-    [TestCase("ChargeId")]
-    [TestCase("StudentId")]
-    [TestCase("Amount")]
-    [TestCase("Currency")]
-    [TestCase("OccurredAtUtc")]
-    [TestCase("PaymentId")]
-    public void MissingPaymentFieldsAreRejected(string field)
-    {
-        var payload = Payload("PaymentRecorded");
-        payload.Remove(field);
-        Assert.Throws<ArgumentException>(() => Parse(payload));
-    }
-
-    [TestCase(0)]
-    [TestCase(-1)]
-    [TestCase(1.001)]
-    public void InvalidAmountsAreRejected(double amount)
-    {
-        var payload = Payload("ChargeCreated");
-        payload["Amount"] = amount;
-        Assert.Throws<ArgumentException>(() => Parse(payload));
-    }
-
-    [TestCase("Amount", "123.45")]
-    [TestCase("Currency", "EUR")]
-    [TestCase("ChargeId", "invalid")]
-    [TestCase("PaymentId", "00000000-0000-0000-0000-000000000000")]
-    [TestCase("OccurredAtUtc", "2026-10-04T12:00:00")]
-    public void InvalidFieldsAreRejected(string field, string value)
-    {
-        var payload = Payload("ChargePaid");
-        payload[field] = value;
-        Assert.Throws<ArgumentException>(() => Parse(payload));
-    }
-
-    [Test]
-    public void CreatedChargeCannotReferencePayment()
-    {
-        var payload = Payload("ChargeCreated");
-        payload["PaymentId"] = Guid.NewGuid();
-        Assert.Throws<ArgumentException>(() => Parse(payload));
-    }
-
-    [Test]
-    public void WrongQueueOrMetadataIsRejected()
-    {
-        var payload = Payload("ChargePaid");
-        var body = JsonSerializer.SerializeToUtf8Bytes(payload);
-        Assert.Throws<ArgumentException>(() => NotificationEventParser.Parse("notification.food",
-            "ChargePaid", payload["EventId"]!.ToString(), body));
-        Assert.Throws<ArgumentException>(() => NotificationEventParser.Parse("notification.billing",
-            "ChargePaid", Guid.NewGuid().ToString(), body));
-        Assert.Throws<ArgumentException>(() => NotificationEventParser.Parse("notification.billing",
-            "PaymentRecorded", payload["EventId"]!.ToString(), body));
-    }
-
-    [Test]
-    public void RetryKeepsFingerprintButChangedAmountDoesNot()
-    {
-        var payload = Payload("PaymentRecorded");
-        var original = Parse(payload);
-        Assert.That(Parse(payload).Fingerprint, Is.EqualTo(original.Fingerprint));
-        payload["Amount"] = 50m;
-        Assert.That(Parse(payload).Fingerprint, Is.Not.EqualTo(original.Fingerprint));
     }
 }

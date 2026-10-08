@@ -10,6 +10,7 @@ using StudentCenter.ApplicationService.Infrastructure.Persistence;
 using StudentCenter.ApplicationService.Infrastructure.Repositories;
 using StudentCenter.ApplicationService.Infrastructure.Storage;
 using StudentCenter.ApplicationService.Infrastructure.Messaging;
+using StudentCenter.ApplicationService.Infrastructure.Security;
 using StudentCenter.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,8 +44,8 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("ApplicationDb")));
+builder.Services.AddDbContext<ApplicationDbContext>(options => options
+    .UseSqlServer(builder.Configuration.GetConnectionString("ApplicationDb")));
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<IStudentClient, StudentClient>(client =>
@@ -86,12 +87,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("ManageApplications", policy => policy
-        .RequireAuthenticatedUser()
-        .RequireClaim("permission", "ManageApplications"));
-});
+builder.Services.AddApplicationAuthorization();
 
 var app = builder.Build();
 

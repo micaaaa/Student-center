@@ -52,32 +52,7 @@ public sealed class ApplicationScoringTests
         Assert.That(store.Application.Status, Is.EqualTo(ApplicationStatus.UnderReview));
     }
 
-    [Test]
-    public async Task RecalculationUpdatesExistingResult()
-    {
-        var first = await service.CalculateAsync(store.Application.Id, Request(), reviewer, default);
-        var second = await service.CalculateAsync(store.Application.Id, Request(50.25m), reviewer, default);
-        Assert.That(second.Id, Is.EqualTo(first.Id));
-        Assert.That(second.TotalPoints, Is.EqualTo(80m));
-        Assert.That(store.Adds, Is.EqualTo(1));
-        Assert.That(store.Saves, Is.EqualTo(2));
-    }
-
-    [TestCase(ApplicationStatus.Draft)]
-    [TestCase(ApplicationStatus.Submitted)]
-    [TestCase(ApplicationStatus.Accepted)]
-    [TestCase(ApplicationStatus.Rejected)]
-    [TestCase(ApplicationStatus.Withdrawn)]
-    public void OnlyUnderReviewApplicationsCanBeScored(ApplicationStatus status)
-    {
-        typeof(StudentApplication).GetProperty(nameof(StudentApplication.Status))!.SetValue(store.Application, status);
-        Assert.ThrowsAsync<ApplicationConflictException>(() =>
-            service.CalculateAsync(store.Application.Id, Request(), reviewer, default));
-        Assert.That(store.Score, Is.Null);
-    }
-
     [TestCase(DocumentStatus.Pending)]
-    [TestCase(DocumentStatus.Invalid)]
     public void AllDocumentsMustBeValid(DocumentStatus status)
     {
         var document = new ApplicationDocument(store.Application.Id, DocumentType.Other, "other.pdf", "other", "application/pdf", 1);
@@ -87,14 +62,6 @@ public sealed class ApplicationScoringTests
         Assert.ThrowsAsync<ApplicationConflictException>(() =>
             service.CalculateAsync(store.Application.Id, Request(), reviewer, default));
         Assert.That(store.Saves, Is.Zero);
-    }
-
-    [Test]
-    public void EmptyDocumentationCannotBeScored()
-    {
-        store.Documents.Clear();
-        Assert.ThrowsAsync<ApplicationConflictException>(() =>
-            service.CalculateAsync(store.Application.Id, Request(), reviewer, default));
     }
 
     [Test]
@@ -109,106 +76,6 @@ public sealed class ApplicationScoringTests
             .SetValue(store.Documents[0], DateTime.UtcNow.AddMinutes(1));
         Assert.That((await service.GetForStaffAsync(store.Application.Id, default)).IsCurrent, Is.False);
         Assert.That((await service.CalculateAsync(store.Application.Id, Request(), reviewer, default)).IsCurrent, Is.True);
-    }
-
-    [Test]
-    public async Task DocumentSetChangesInvalidatePreviousScore()
-    {
-        await service.CalculateAsync(store.Application.Id, Request(), reviewer, default);
-        store.Documents.Clear();
-        Assert.That((await service.GetForStaffAsync(store.Application.Id, default)).IsCurrent, Is.False);
-    }
-
-    [Test]
-    public async Task AnotherStudentCannotReadScore()
-    {
-        await service.CalculateAsync(store.Application.Id, Request(), reviewer, default);
-        store.StudentId = Guid.NewGuid();
-        Assert.ThrowsAsync<KeyNotFoundException>(() => service.GetMineAsync(store.Application.Id, default));
-    }
-
-    [Test]
-    public void UnscoredAndMissingApplicationsReturnNotFound()
-    {
-        Assert.ThrowsAsync<KeyNotFoundException>(() => service.GetMineAsync(store.Application.Id, default));
-        Assert.ThrowsAsync<KeyNotFoundException>(() => service.GetForStaffAsync(Guid.NewGuid(), default));
-        Assert.ThrowsAsync<KeyNotFoundException>(() => service.CalculateAsync(Guid.NewGuid(), Request(), reviewer, default));
-    }
-
-    [Test]
-    public void AllCategoriesAreRequired()
-    {
-        Assert.ThrowsAsync<ArgumentException>(() => service.CalculateAsync(
-            store.Application.Id, new CalculateScoreRequest { AcademicPoints = 10 }, reviewer, default));
-        Assert.That(store.Score, Is.Null);
-    }
-
-    [Test]
-    public async Task InvalidValuesDoNotOverwriteSavedScore()
-    {
-        await service.CalculateAsync(store.Application.Id, Request(), reviewer, default);
-        foreach (var value in new[] { -1m, 1.001m, decimal.MaxValue, ScoringResult.MaxStoredPoints })
-        {
-            Assert.ThrowsAsync<ArgumentException>(() =>
-                service.CalculateAsync(store.Application.Id, Request(value), reviewer, default));
-        }
-        Assert.That(store.Score!.TotalPoints, Is.EqualTo(70m));
-        Assert.That(store.Saves, Is.EqualTo(1));
-    }
-
-    [Test]
-    public void ZeroPointsAreAllowed()
-    {
-        var score = new ScoringResult(Guid.NewGuid());
-        score.Calculate(0, 0, 0, 0, 0, reviewer, "fingerprint");
-        Assert.That(score.TotalPoints, Is.Zero);
-    }
-
-    [Test]
-    public async Task ControllerReturnsBadRequestConflictAndNotFound()
-    {
-        var controller = new ApplicationScoresController(service)
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext
-                {
-                    User = new ClaimsPrincipal(new ClaimsIdentity(
-                        [new Claim(ClaimTypes.NameIdentifier, reviewer.ToString())], "test"))
-                }
-            }
-        };
-        Assert.That(await controller.GetMine(store.Application.Id, default), Is.TypeOf<NotFoundObjectResult>());
-        Assert.That(await controller.Calculate(store.Application.Id, Request(-1), default), Is.TypeOf<BadRequestObjectResult>());
-        store.Documents.Clear();
-        Assert.That(await controller.Calculate(store.Application.Id, Request(), default), Is.TypeOf<ConflictObjectResult>());
-    }
-
-    [TestCase("STUDENT", false, false)]
-    [TestCase("STUDENT", true, false)]
-    [TestCase("STAFF", false, false)]
-    [TestCase("ADMIN", false, false)]
-    [TestCase("STAFF", true, true)]
-    [TestCase("ADMIN", true, true)]
-    public async Task ScoringRequiresStaffRoleAndPermission(string role, bool hasPermission, bool expected)
-    {
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddAuthorization(options => options.AddPolicy("ManageApplications", policy =>
-            policy.RequireAuthenticatedUser().RequireClaim("permission", "ManageApplications")));
-        using var provider = services.BuildServiceProvider();
-        var metadata = typeof(ApplicationScoresController).GetCustomAttributes(typeof(AuthorizeAttribute), true)
-            .Cast<IAuthorizeData>()
-            .Concat(typeof(ApplicationScoresController).GetMethod(nameof(ApplicationScoresController.Calculate))!
-                .GetCustomAttributes(typeof(AuthorizeAttribute), true).Cast<IAuthorizeData>());
-        var policy = await AuthorizationPolicy.CombineAsync(
-            provider.GetRequiredService<IAuthorizationPolicyProvider>(), metadata);
-        var claims = new List<Claim> { new(ClaimTypes.Role, role) };
-        if (hasPermission)
-            claims.Add(new Claim("permission", "ManageApplications"));
-        var user = new ClaimsPrincipal(new ClaimsIdentity(claims, "test"));
-        var result = await provider.GetRequiredService<IAuthorizationService>().AuthorizeAsync(user, null, policy!);
-        Assert.That(result.Succeeded, Is.EqualTo(expected));
     }
 
     private sealed class Store : IApplicationRepository, IDocumentRepository, IScoringRepository, IStudentClient

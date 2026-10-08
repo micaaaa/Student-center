@@ -33,6 +33,12 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSett
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddHttpClient<IStudentRegistrationClient,
+    StudentCenter.IdentityService.Infrastructure.ExternalServices.StudentRegistrationClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:StudentServiceUrl"] ?? "https://localhost:49686/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IdentityDatabaseInitializer>();
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
@@ -60,7 +66,10 @@ builder.Services.AddAuthorization(options =>
 {
     foreach (var permission in Enum.GetNames<Permission>())
     {
-        options.AddPolicy(permission, policy => policy.RequireClaim("permission", permission));
+        options.AddPolicy(permission, policy => policy
+            .RequireAuthenticatedUser()
+            .RequireRole("STAFF", "ADMIN")
+            .RequireClaim("permission", permission));
     }
 });
 

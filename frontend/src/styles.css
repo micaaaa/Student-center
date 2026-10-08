@@ -211,6 +211,11 @@ label small {
     grid-template-columns: 45% 55%;
 }
 .auth-story {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    min-height: 720px;
     padding: 44px 10% 30px;
     background: #183c34;
     color: #f7f8eb;
@@ -355,6 +360,11 @@ label small {
 }
 .auth-form-wrap form {
     margin-top: 30px;
+}
+.auth-name-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
 }
 .password-field {
     position: relative;
@@ -900,6 +910,9 @@ label small {
     }
     .auth-story {
         padding: 25px;
+        position: static;
+        height: auto;
+        min-height: 0;
     }
     .story-copy,
     .story-footer {

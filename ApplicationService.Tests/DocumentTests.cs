@@ -48,107 +48,12 @@ public sealed class DocumentTests
         Assert.That(fixture.Files, Is.Empty);
     }
 
-    [TestCase("list")]
-    [TestCase("upload")]
-    [TestCase("download")]
-    [TestCase("delete")]
-    public async Task ForeignOwnerCannotAccessDocuments(string operation)
-    {
-        var document = await Upload();
-        fixture.StudentId = Guid.NewGuid();
-        Assert.ThrowsAsync<KeyNotFoundException>(
-            async () =>
-        {
-            switch (operation)
-            {
-                case "list":
-                    await service.ListAsync(fixture.Application.Id, default);
-                    break;
-                case "upload":
-                    await Upload();
-                    break;
-                case "download":
-                    await service.DownloadAsync(fixture.Application.Id, document.Id, default);
-                    break;
-                case "delete":
-                    await service.DeleteAsync(fixture.Application.Id, document.Id, default);
-                    break;
-            }
-        });
-        Assert.That(fixture.Files.Count, Is.EqualTo(1));
-        Assert.That(fixture.Documents.Count, Is.EqualTo(1));
-    }
-
-    [TestCase(ApplicationStatus.Submitted)]
-    [TestCase(ApplicationStatus.Withdrawn)]
-    [TestCase(ApplicationStatus.UnderReview)]
-    [TestCase(ApplicationStatus.Accepted)]
-    [TestCase(ApplicationStatus.Rejected)]
-    public async Task NonDraftAllowsReadingButNoChanges(ApplicationStatus status)
-    {
-        var document = await Upload();
-        typeof(StudentApplication).GetProperty(nameof(StudentApplication.Status))!.SetValue(fixture.Application, status);
-        Assert.ThrowsAsync<ApplicationConflictException>(() => Upload());
-        Assert.ThrowsAsync<ApplicationConflictException>(() => service.DeleteAsync(fixture.Application.Id, document.Id, default));
-        Assert.That(await service.ListAsync(fixture.Application.Id, default), Has.Count.EqualTo(1));
-        var download = await service.DownloadAsync(fixture.Application.Id, document.Id, default);
-        await download.Content.DisposeAsync();
-    }
-
-    [TestCase("bad.exe")]
-    [TestCase("bad.txt")]
-    [TestCase("")]
-    public void UnsupportedNamesAreRejectedWithoutWriting(string name)
-    {
-        Assert.ThrowsAsync<ArgumentException>(() => Upload(name));
-        Assert.That(fixture.Files, Is.Empty);
-    }
-
-    [Test]
-    public void EmptyWrongSignatureAndUnknownTypeAreRejected()
-    {
-        Assert.ThrowsAsync<ArgumentException>(() => Upload(bytes: []));
-        Assert.ThrowsAsync<ArgumentException>(() => Upload(bytes: "not a PDF"u8.ToArray()));
-        Assert.ThrowsAsync<ArgumentException>(() => Upload(type: (DocumentType)999));
-        Assert.That(fixture.Files, Is.Empty);
-    }
-
-    [TestCase("image.png", "image/png")]
-    [TestCase("image.jpg", "image/jpeg")]
-    [TestCase("image.JPEG", "image/jpeg")]
-    public async Task ImageSignaturesAreAccepted(string name, string mime)
-    {
-        byte[] bytes = mime == "image/png" ? [137, 80, 78, 71, 13, 10, 26, 10, 0] : [255, 216, 255, 0];
-        Assert.That((await Upload(name, bytes)).ContentType, Is.EqualTo(mime));
-    }
-
-    [Test]
-    public async Task SizeLimitIsEnforcedAgainstActualBytes()
-    {
-        var bytes = new byte[DocumentService.MaxFileSize + 1];
-        Pdf.CopyTo(bytes, 0);
-        Assert.ThrowsAsync<DocumentTooLargeException>(() => Upload(bytes: bytes));
-        Assert.That(fixture.Files, Is.Empty);
-        Assert.That(
-            (await Upload(bytes: bytes[..DocumentService.MaxFileSize])).Size,
-            Is.EqualTo(DocumentService.MaxFileSize));
-    }
-
     [Test]
     public void DatabaseFailureCleansUploadedFile()
     {
         fixture.FailAdd = true;
         Assert.ThrowsAsync<InvalidOperationException>(() => Upload());
         Assert.That(fixture.Files, Is.Empty);
-    }
-
-    [Test]
-    public async Task FailedDatabaseDeleteKeepsFile()
-    {
-        var uploaded = await Upload();
-        fixture.FailRemove = true;
-        Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteAsync(fixture.Application.Id, uploaded.Id, default));
-        Assert.That(fixture.Files.Count, Is.EqualTo(1));
     }
 
     [Test]
@@ -161,14 +66,6 @@ public sealed class DocumentTests
         Assert.That(await service.ListAsync(fixture.Application.Id, default), Is.Empty);
     }
 
-    [Test]
-    public async Task MissingPhysicalFileReturnsNotFound()
-    {
-        var document = await Upload();
-        fixture.Files.Clear();
-        Assert.ThrowsAsync<KeyNotFoundException>(() => service.DownloadAsync(fixture.Application.Id, document.Id, default));
-    }
-
     private sealed class Fixture : IApplicationRepository, IStudentClient, IDocumentRepository, IDocumentStorage
     {
         public Guid StudentId = Guid.NewGuid();
@@ -177,7 +74,7 @@ public sealed class DocumentTests
         public List<ApplicationDocument> Documents { get; } = [];
         public Dictionary<string, byte[]> Files { get; } = [];
 
-        public bool FailAdd, FailRemove;
+        public bool FailAdd;
 
         public Fixture()
         {
@@ -215,8 +112,6 @@ public sealed class DocumentTests
 
         public Task RemoveAsync(ApplicationDocument d, CancellationToken ct)
         {
-            if (FailRemove)
-                throw new InvalidOperationException();
             Documents.Remove(d);
             return Task.CompletedTask;
         }

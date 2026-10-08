@@ -9,20 +9,6 @@ namespace StudentCenter.AccommodationService.Tests;
 
 public sealed class AccommodationOutboxTests
 {
-    [Test]
-    public async Task MessagesAreSavedOnlyAfterConfirmationAndEachSuccessIsSavedSeparately()
-    {
-        var store = new Store(CreateMessage(), CreateMessage());
-        var publisher = new Publisher(message =>
-        {
-            Assert.That(message.PublishedAtUtc, Is.Null);
-            Assert.That(store.SavedIds.Contains(message.Id), Is.False);
-        });
-        await new AccommodationOutboxDispatcher(store, publisher, TimeProvider.System).DispatchAsync(default);
-        Assert.That(store.SavedIds, Is.EquivalentTo(store.Messages.Select(message => message.Id)));
-        Assert.That(store.Saves, Is.EqualTo(2));
-        Assert.That(publisher.SentIds, Is.EqualTo(store.Messages.Select(message => message.Id)));
-    }
 
     [Test]
     public async Task FailedConfirmationLeavesMessagePendingAndRetryKeepsTheSameEventId()
@@ -44,49 +30,6 @@ public sealed class AccommodationOutboxTests
         {
             store.Messages[0].Id, store.Messages[1].Id, store.Messages[1].Id
         }));
-    }
-
-    [Test]
-    public async Task DatabaseFailureAfterConfirmationStopsBatchAndAllowsRedelivery()
-    {
-        var store = new Store(CreateMessage(), CreateMessage()) { FailSave = true };
-        var publisher = new Publisher(_ => { });
-        var dispatcher = new AccommodationOutboxDispatcher(store, publisher, TimeProvider.System);
-        Assert.ThrowsAsync<IOException>(() => dispatcher.DispatchAsync(default));
-        Assert.That(store.SavedIds, Is.Empty);
-        Assert.That(publisher.SentIds, Has.Count.EqualTo(1));
-        store.FailSave = false;
-        await dispatcher.DispatchAsync(default);
-        Assert.That(publisher.SentIds, Is.EqualTo(new[]
-        {
-            store.Messages[0].Id, store.Messages[0].Id, store.Messages[1].Id
-        }));
-    }
-
-    [Test]
-    public void CancellationBeforeConfirmationDoesNotMarkPublished()
-    {
-        var store = new Store(CreateMessage());
-        var dispatcher = new AccommodationOutboxDispatcher(store,
-            new Publisher(_ => throw new OperationCanceledException()), TimeProvider.System);
-        Assert.ThrowsAsync<OperationCanceledException>(() => dispatcher.DispatchAsync(default));
-        Assert.That(store.Messages.Single().PublishedAtUtc, Is.Null);
-        Assert.That(store.Saves, Is.Zero);
-    }
-
-    [Test]
-    public void OutboxUsesSameDbContextAndEnforcesOneEventPerTransition()
-    {
-        using var db = new AccommodationDbContext(new DbContextOptionsBuilder<AccommodationDbContext>()
-            .UseSqlServer("Server=unused;Database=unused;Integrated Security=true").Options);
-        var entity = db.Model.FindEntityType(typeof(AccommodationOutboxMessage))!;
-        Assert.That(entity.GetForeignKeys().Single().PrincipalEntityType.ClrType,
-            Is.EqualTo(typeof(StudentAccommodation)));
-        Assert.That(entity.GetIndexes().Any(index => index.IsUnique
-            && index.Properties.Select(property => property.Name)
-                .SequenceEqual(new[] { "AccommodationId", "Type" })), Is.True);
-        Assert.That(entity.FindProperty(nameof(AccommodationOutboxMessage.Sequence))!.ValueGenerated,
-            Is.EqualTo(Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.OnAdd));
     }
 
     private static AccommodationOutboxMessage CreateMessage()

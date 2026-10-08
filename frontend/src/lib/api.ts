@@ -66,6 +66,10 @@ const translations: Record<string, string> = {
 };
 
 const applicationMessages = new Set([
+    'Registration is incomplete. Submit the registration form again using the same username, email and password.',
+    'Registration already created a profile with a different student number. Retry with the original student number.',
+    'An account with this username or email already exists. Retry registration or sign in.',
+    'A student profile with this account or student number already exists.',
     'You cannot change your own role, permissions or account status.',
     'At least one active administrator with user management permission must remain.',
     'Student accounts cannot have staff permissions.',
@@ -224,6 +228,9 @@ async function send<T>(path: string, options: RequestOptions = {}, token?: strin
     if (!response.ok) {
         const body = await response.json().catch(() => null);
         const message =
+            (path === '/api/auth/register' && response.status === 503
+                ? 'Student registration is temporarily unavailable. Please retry using the same username, email and password.'
+                : '') ||
             translations[body?.message] ||
             (response.status === 409 &&
             typeof body?.message === 'string' &&

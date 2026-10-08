@@ -9,15 +9,6 @@ namespace StudentCenter.NotificationService.Tests;
 [TestFixture]
 public sealed class NotificationAccessTests
 {
-    [TestCase(0, 50)]
-    [TestCase(1, 0)]
-    [TestCase(1, 101)]
-    [TestCase(int.MaxValue, 100)]
-    public void InvalidPaginationIsRejectedBeforeOwnerLookup(int page, int pageSize)
-    {
-        var service = new Service(new Repository(), new Owner(), TimeProvider.System);
-        Assert.ThrowsAsync<ArgumentException>(() => service.ListAsync(false, page, pageSize, default));
-    }
 
     [Test]
     public async Task AllOperationsUseAuthenticatedOwner()

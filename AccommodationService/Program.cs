@@ -86,6 +86,7 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("ManageAccommodation", policy => policy
         .RequireAuthenticatedUser()
+        .RequireRole("STAFF", "ADMIN")
         .RequireClaim("permission", "ManageAccommodation"));
 });
 

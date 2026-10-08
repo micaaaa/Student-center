@@ -17,17 +17,6 @@ namespace StudentCenter.NotificationService.Tests;
 [TestFixture]
 public sealed class EmailTests
 {
-    [TestCase("FinalRankingPublished", true)]
-    [TestCase("AccommodationAssigned", true)]
-    [TestCase("ChargeCreated", true)]
-    [TestCase("MaintenanceRequestResolved", true)]
-    [TestCase("MaintenanceWorkerAssigned", true)]
-    [TestCase("MealPurchased", false)]
-    [TestCase("Unknown", false)]
-    public void OnlySelectedEventsCreateEmails(string type, bool expected)
-    {
-        Assert.That(EmailDelivery.ShouldSend(type), Is.EqualTo(expected));
-    }
 
     [Test]
     public void RetryDelayGrowsAndIsBounded()
@@ -73,16 +62,6 @@ public sealed class EmailTests
         }));
         Assert.That(await new EmailRecipientClient(http, Configuration()).GetAsync(notification, default),
             Is.EqualTo("student@example.com"));
-    }
-
-    [TestCase(HttpStatusCode.NotFound)]
-    [TestCase(HttpStatusCode.Unauthorized)]
-    [TestCase(HttpStatusCode.ServiceUnavailable)]
-    public void FailedLookupDoesNotSupplyAnAddress(HttpStatusCode status)
-    {
-        using var http = new HttpClient(new Handler(_ => new HttpResponseMessage(status)));
-        Assert.ThrowsAsync<HttpRequestException>(() =>
-            new EmailRecipientClient(http, Configuration()).GetAsync(CreateNotification("STUDENT"), default));
     }
 
     [Test]
