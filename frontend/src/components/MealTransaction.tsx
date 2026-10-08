@@ -5,6 +5,7 @@ import { api, ApiError, errorMessage, getSession } from '../lib/api';
 import type { Entitlement, Restaurant } from '../lib/food';
 import { ConfirmationDialog } from './ConfirmationDialog';
 import { RequestError } from './ApplicationUi';
+import { money } from '../lib/billing';
 
 type Pending = {
     requestId: string;
@@ -161,7 +162,7 @@ export function MealTransaction({
                                     />
                                 </label>
                                 <label>
-                                    Unit price
+                                    Unit price (RSD)
                                     <input
                                         type="number"
                                         required
@@ -173,6 +174,14 @@ export function MealTransaction({
                                     />
                                 </label>
                             </div>
+                            {Number(quantity) > 0 &&
+                                Number(price) > 0 &&
+                                Number.isFinite(Number(quantity) * Number(price)) && (
+                                    <p>
+                                        Total already paid:{' '}
+                                        <strong>{money(Number(quantity) * Number(price))}</strong>
+                                    </p>
+                                )}
                         </>
                     ) : (
                         <>
@@ -183,6 +192,11 @@ export function MealTransaction({
                                     error={restaurants.error}
                                     retry={restaurants.reload}
                                 />
+                            ) : !restaurants.data?.some((restaurant) => restaurant.status === 1) ? (
+                                <p className="notice">
+                                    No active restaurants are available. Activate a restaurant in
+                                    restaurant administration before recording consumption.
+                                </p>
                             ) : (
                                 <label>
                                     Restaurant
@@ -244,7 +258,7 @@ export function MealTransaction({
                 >
                     <p>
                         {purchase
-                            ? `${confirmation.quantity} meals × ${confirmation.unitPrice!.toFixed(2)} = ${(confirmation.quantity! * confirmation.unitPrice!).toFixed(2)}. Confirm that payment has already been received.`
+                            ? `${confirmation.quantity} meals × ${money(confirmation.unitPrice!)} = ${money(confirmation.quantity! * confirmation.unitPrice!)}. Confirm that payment has already been received.`
                             : 'Record one consumed meal at the selected restaurant?'}
                     </p>
                 </ConfirmationDialog>

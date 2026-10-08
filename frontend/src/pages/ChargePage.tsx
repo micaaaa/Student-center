@@ -75,6 +75,17 @@ function ChargeRecord({
                 <p className="record-reference">Reference: {item.referenceId}</p>
                 <p>Created: {dateTime(item.createdAtUtc)}</p>
                 {item.paidAtUtc && <p>Paid in full: {dateTime(item.paidAtUtc)}</p>}
+                {item.outstandingAmount === 0 && (
+                    <p className="notice success">
+                        This charge is fully paid. No further payment is required.
+                    </p>
+                )}
+                {!management && item.outstandingAmount > 0 && (
+                    <p className="notice">
+                        Contact the billing office for payment instructions. Your balance will
+                        update after staff record the received payment.
+                    </p>
+                )}
                 {management && (item.outstandingAmount > 0 || pending) && (
                     <button className="primary" disabled={paying} onClick={() => setPaying(true)}>
                         {pending ? 'Resume pending payment' : 'Record received payment'}

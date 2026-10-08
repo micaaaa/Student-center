@@ -65,7 +65,9 @@ export function BillingForm({
             (charge && Math.round(value * 100) > Math.round(charge.outstandingAmount * 100))
         ) {
             setError(
-                'Enter a positive amount with up to two decimal places, no greater than the outstanding balance.',
+                charge
+                    ? `Enter a positive amount with up to two decimal places, no greater than ${money(charge.outstandingAmount)}.`
+                    : 'Enter a positive charge amount with up to two decimal places, within the supported limits.',
             );
             return;
         }
@@ -171,6 +173,7 @@ export function BillingForm({
                                     type="number"
                                     required
                                     min="0.01"
+                                    max={charge?.outstandingAmount}
                                     step="0.01"
                                     value={amount}
                                     onChange={(e) => setAmount(e.target.value)}
@@ -179,6 +182,26 @@ export function BillingForm({
                             {charge ? (
                                 <>
                                     <p>Outstanding: {money(charge.outstandingAmount)}</p>
+                                    <button
+                                        type="button"
+                                        className="secondary"
+                                        onClick={() =>
+                                            setAmount(charge.outstandingAmount.toFixed(2))
+                                        }
+                                    >
+                                        Use full outstanding amount
+                                    </button>
+                                    {Number(amount) > 0 &&
+                                        Number(amount) <= charge.outstandingAmount && (
+                                            <p>
+                                                Remaining after this payment:{' '}
+                                                {money(
+                                                    (Math.round(charge.outstandingAmount * 100) -
+                                                        Math.round(Number(amount) * 100)) /
+                                                        100,
+                                                )}
+                                            </p>
+                                        )}
                                     <label>
                                         Payment method
                                         <select
@@ -301,6 +324,13 @@ export function BillingForm({
                             {confirmation.referenceNumber || 'No reference'}
                             <br />
                             Confirm that this payment has been received.
+                            <br />
+                            Remaining after payment:{' '}
+                            {money(
+                                (Math.round(charge.outstandingAmount * 100) -
+                                    Math.round(confirmation.amount * 100)) /
+                                    100,
+                            )}
                         </p>
                     ) : (
                         <>

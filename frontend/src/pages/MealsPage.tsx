@@ -24,6 +24,11 @@ export function MealsPage({ management = false }: { management?: boolean }) {
                 <p className="muted">
                     Monthly entitlements, paid purchases and consumption records.
                 </p>
+                <p>
+                    {management
+                        ? 'Choose a student and month. Create an entitlement if needed, record meals after payment has been received, then record consumption when a meal is served.'
+                        : 'To buy meals, contact the dining office. Staff record your paid purchase here. Each meal served reduces your remaining balance. Paid purchases do not create a billing debt.'}
+                </p>
             </div>
             <div className="list-toolbar">
                 <label>
@@ -142,7 +147,13 @@ function MealRecords({
         setTransaction(null);
         entitlements.reload();
         setVersion((value) => value + 1);
-        setSuccess('Meal record saved.');
+        setSuccess(
+            transaction
+                ? transaction.purchase
+                    ? 'Paid purchase recorded. The meal balance and purchase history have been refreshed.'
+                    : 'One consumed meal recorded. The meal balance and consumption history have been refreshed.'
+                : 'Meal entitlement saved.',
+        );
     }
     return (
         <>
@@ -172,7 +183,11 @@ function MealRecords({
                 ) : (
                     <>
                         {!entitlements.data?.length && (
-                            <p>No meal entitlements found for this month.</p>
+                            <p>
+                                {studentId
+                                    ? 'No meal entitlements exist for this month. Create an entitlement before recording a paid purchase.'
+                                    : 'No meal entitlements exist for this month. Contact the dining office to arrange your entitlement and purchase.'}
+                            </p>
                         )}
                         {entitlements.data?.map((item) => (
                             <article className="staff-document" key={item.id}>
@@ -198,6 +213,18 @@ function MealRecords({
                                         <dd>{item.remainingQuantity}</dd>
                                     </div>
                                 </dl>
+                                {item.status === 1 && item.remainingQuantity === 0 && (
+                                    <p className="notice">
+                                        No meals remain for this meal type. A paid purchase must be
+                                        recorded before another meal can be consumed.
+                                    </p>
+                                )}
+                                {item.status === 2 && (
+                                    <p className="notice">
+                                        This entitlement is suspended. Purchases and consumption are
+                                        unavailable until staff reactivate it.
+                                    </p>
+                                )}
                                 {studentId && (
                                     <div className="button-row">
                                         <button
