@@ -66,6 +66,9 @@ const translations: Record<string, string> = {
 };
 
 const applicationMessages = new Set([
+    'Enter the exact username to confirm deletion.',
+    'Account deletion must be completed before any further changes.',
+    'Account access has been disabled. A linked service is unavailable; retry deletion to finish removing personal details.',
     'Registration is incomplete. Submit the registration form again using the same username, email and password.',
     'Registration already created a profile with a different student number. Retry with the original student number.',
     'An account with this username or email already exists. Retry registration or sign in.',

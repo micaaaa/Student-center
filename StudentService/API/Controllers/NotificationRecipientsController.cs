@@ -14,7 +14,7 @@ public sealed class NotificationRecipientsController(StudentDbContext db) : Cont
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id, CancellationToken ct)
     {
-        var recipient = await db.Students.AsNoTracking().Where(student => student.Id == id)
+        var recipient = await db.Students.AsNoTracking().Where(student => student.Id == id && !student.IsDeleted)
             .Select(student => new { student.Email }).SingleOrDefaultAsync(ct);
         return recipient is null ? NotFound() : Ok(recipient);
     }

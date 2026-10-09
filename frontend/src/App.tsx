@@ -1,7 +1,7 @@
 import { UsersPage, UserPage } from './pages/UsersPage';
 import { NotificationsPage } from './pages/NotificationsPage';
-import { StudentsPage, StudentPage } from './pages/StudentsPage';
-import { BrowserRouter, Link, Route, Routes } from 'react-router';
+import { StudentPage } from './pages/StudentsPage';
+import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router';
 import { AuthProvider, ProtectedRoute } from './auth/AuthContext';
 import { Layout } from './components/Layout';
 import { AuthPage } from './pages/AuthPage';
@@ -54,7 +54,6 @@ export default function App() {
                                     />
                                 }
                             >
-                                <Route path="/staff/users" element={<UsersPage />} />
                                 <Route path="/staff/users/:id" element={<UserPage />} />
                             </Route>
                             <Route path="/notifications" element={<NotificationsPage />} />
@@ -73,7 +72,11 @@ export default function App() {
                                 />
                             </Route>
                             <Route element={<ProtectedRoute roles={['STAFF', 'ADMIN']} />}>
-                                <Route path="/staff/students" element={<StudentsPage />} />
+                                <Route path="/staff/users" element={<UsersPage />} />
+                                <Route
+                                    path="/staff/students"
+                                    element={<Navigate to="/staff/users?role=STUDENT" replace />}
+                                />
                                 <Route path="/staff/students/:id" element={<StudentPage />} />
                                 <Route
                                     path="/maintenance-work"

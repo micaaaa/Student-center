@@ -40,6 +40,8 @@ builder.Services.AddHttpClient<IStudentRegistrationClient,
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+builder.Services.AddScoped<AccountDeletionService>();
+builder.Services.AddHttpClient("AccountLifecycle", client => client.Timeout = TimeSpan.FromSeconds(8));
 builder.Services.AddScoped<IdentityDatabaseInitializer>();
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();

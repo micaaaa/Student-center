@@ -59,7 +59,7 @@ export function AuthPage({ register = false }: { register?: boolean }) {
     }
 
     return (
-        <main className="auth-page">
+        <main className={register ? 'auth-page auth-register' : 'auth-page'}>
             <section className="auth-story">
                 <Link className="brand" to="/">
                     <span className="brand-icon">
@@ -120,7 +120,7 @@ export function AuthPage({ register = false }: { register?: boolean }) {
                     <h2>{register ? 'Student registration' : 'Sign in'}</h2>
                     <p className="muted">
                         {register
-                            ? 'Create your account and student record. You can add academic and contact details next.'
+                            ? 'Create your account. Add academic and contact details next.'
                             : 'Enter your credentials to access the portal.'}
                     </p>
                     <form onSubmit={submit}>
@@ -137,9 +137,7 @@ export function AuthPage({ register = false }: { register?: boolean }) {
                                         pattern="[a-zA-Z0-9._-]+"
                                         placeholder="e.g. ana.petrovic"
                                     />
-                                    <small>
-                                        Use letters A–Z, numbers, periods, hyphens or underscores.
-                                    </small>
+                                    <small>Letters, numbers and . _ - only.</small>
                                 </label>
                             )}
                             {register && (
@@ -173,13 +171,12 @@ export function AuthPage({ register = false }: { register?: boolean }) {
                                             placeholder="e.g. RA 123/2026"
                                         />
                                         <small>
-                                            Enter your unique student number. It cannot be changed
-                                            through your profile.
+                                            Your unique student number. Cannot be changed later.
                                         </small>
                                     </label>
                                 </>
                             )}
-                            <label>
+                            <label className={register ? 'auth-email-field' : undefined}>
                                 Email address
                                 <input
                                     name="email"

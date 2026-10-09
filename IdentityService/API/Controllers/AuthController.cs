@@ -79,6 +79,22 @@ public sealed class AuthController(IAuthService authService, IUserRepository use
         if (!Guid.TryParse(userIdValue, out var userId))
             return Unauthorized();
         var user = await userRepository.GetByIdAsync(userId, cancellationToken);
-        return user is null ? Unauthorized() : Ok(authService.ToUserResponse(user));
+        return user is null || user.Status != Domain.Enums.AccountStatus.Active
+            ? Unauthorized() : Ok(authService.ToUserResponse(user));
+    }
+
+    [HttpGet("student-accounts")]
+    [Authorize(Roles = "STAFF,ADMIN")]
+    public async Task<IActionResult> StudentAccounts(CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id))
+            return Unauthorized();
+        var actor = await userRepository.GetByIdAsync(id, ct);
+        if (actor is null || actor.Status != Domain.Enums.AccountStatus.Active
+            || actor.Role == Domain.Enums.UserRole.Student)
+            return Forbid();
+        var users = await userRepository.GetAllAsync(ct);
+        return Ok(users.Where(user => user.Role == Domain.Enums.UserRole.Student && !user.DeletionPending)
+            .Select(user => user.Id));
     }
 }

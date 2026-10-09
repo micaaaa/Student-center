@@ -72,6 +72,7 @@ builder.Services.AddHttpClient<IFoodStudentClient, FoodStudentClient>(client =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.Events = StudentCenter.Security.AccountAccessValidation.Events();
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,

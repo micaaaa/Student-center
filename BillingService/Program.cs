@@ -72,6 +72,7 @@ builder.Services.AddHttpClient<IBillingStudentClient, BillingStudentClient>(clie
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.Events = StudentCenter.Security.AccountAccessValidation.Events();
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,

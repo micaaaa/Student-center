@@ -29,6 +29,8 @@ public sealed class User
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime? LastLoginAtUtc { get; private set; }
     public bool RegistrationPending { get; private set; }
+    public bool DeletionPending { get; private set; }
+    public bool IsDeleted { get; private set; }
     public ICollection<UserPermission> Permissions { get; private set; } = new List<UserPermission>();
 
     public void RecordSuccessfulLogin() => LastLoginAtUtc = DateTime.UtcNow;
@@ -39,7 +41,30 @@ public sealed class User
 
     public void Deactivate() => Status = AccountStatus.Inactive;
 
-    public void Activate() => Status = AccountStatus.Active;
+    public void Activate()
+    {
+        if (DeletionPending || IsDeleted)
+            throw new Application.Exceptions.ConflictException("Account deletion must be completed before any further changes.");
+        Status = AccountStatus.Active;
+    }
+
+    public void BeginDeletion()
+    {
+        DeletionPending = true;
+        Deactivate();
+    }
+
+    public void Anonymize()
+    {
+        Username = "deleted-" + Id.ToString("N");
+        Email = Username + "@deleted.invalid";
+        PasswordHash = string.Empty;
+        Permissions.Clear();
+        RegistrationPending = false;
+        DeletionPending = false;
+        IsDeleted = true;
+        Deactivate();
+    }
 
     public void ReplacePermissions(IEnumerable<Permission> selectedPermissions)
     {

@@ -79,6 +79,7 @@ builder.Services.AddHttpClient<ICurrentNotificationOwner, CurrentNotificationOwn
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.Events = StudentCenter.Security.AccountAccessValidation.Events();
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,

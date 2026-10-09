@@ -23,7 +23,7 @@ public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepositor
             .ToArrayAsync(cancellationToken);
     }
     public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
-        dbContext.Users.Include(user => user.Permissions).SingleOrDefaultAsync(user => user.Id == id, cancellationToken);
+        dbContext.Users.Include(user => user.Permissions).SingleOrDefaultAsync(user => user.Id == id && !user.IsDeleted, cancellationToken);
 
     public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default) =>
         dbContext.Users.Include(user => user.Permissions).SingleOrDefaultAsync(user => user.Email == email, cancellationToken);
@@ -32,7 +32,7 @@ public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepositor
         dbContext.Users.Include(user => user.Permissions).SingleOrDefaultAsync(user => user.Username == username, cancellationToken);
 
     public async Task<IReadOnlyCollection<User>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        await dbContext.Users.Include(user => user.Permissions).OrderBy(user => user.Username).ToListAsync(cancellationToken);
+        await dbContext.Users.Include(user => user.Permissions).Where(user => !user.IsDeleted).OrderBy(user => user.Username).ToListAsync(cancellationToken);
 
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {

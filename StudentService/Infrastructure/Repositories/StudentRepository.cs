@@ -5,12 +5,15 @@ using StudentCenter.StudentService.Infrastructure.Persistence;
 
 namespace StudentCenter.StudentService.Infrastructure.Repositories;
 
-public sealed class StudentRepository(StudentDbContext dbContext) : IStudentRepository
+public sealed class StudentRepository(StudentDbContext dbContext,
+    ExternalServices.StudentAccountDirectory accounts) : IStudentRepository
 {
     public async Task<(IReadOnlyList<Student> Items, int TotalCount)> SearchAsync(
         string? search, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        var query = dbContext.Students.AsNoTracking();
+        var userIds = await accounts.GetStudentAccountsAsync(cancellationToken);
+        var query = dbContext.Students.AsNoTracking()
+            .Where(student => !student.IsDeleted && userIds.Contains(student.UserId));
         foreach (var term in (search ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             query = query.Where(student =>

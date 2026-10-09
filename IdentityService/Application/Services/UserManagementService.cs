@@ -18,7 +18,8 @@ public sealed class UserManagementService(IUserRepository userRepository, IAuthS
         (await userRepository.GetAllAsync(cancellationToken)).Select(authService.ToUserResponse).ToArray();
 
     public async Task<UserResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
-        authService.ToUserResponse(await GetUserAsync(id, cancellationToken));
+        authService.ToUserResponse(await userRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new NotFoundException("User was not found."));
 
     public async Task<UserResponse> UpdateRoleAsync(Guid id, UpdateRoleRequest request, CancellationToken cancellationToken = default)
     {
@@ -58,6 +59,12 @@ public sealed class UserManagementService(IUserRepository userRepository, IAuthS
         return authService.ToUserResponse(user);
     }
 
-    private async Task<Domain.Entities.User> GetUserAsync(Guid id, CancellationToken cancellationToken) =>
-        await userRepository.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException("User was not found.");
+    private async Task<Domain.Entities.User> GetUserAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var user = await userRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new NotFoundException("User was not found.");
+        if (user.DeletionPending)
+            throw new ConflictException("Account deletion must be completed before any further changes.");
+        return user;
+    }
 }

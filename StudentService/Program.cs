@@ -47,10 +47,17 @@ if (string.IsNullOrWhiteSpace(jwtSettings.Key) || jwtSettings.Key.Length < 32)
 builder.Services.AddDbContext<StudentDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<IStudentService, StudentProfileService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient<StudentCenter.StudentService.Infrastructure.ExternalServices.StudentAccountDirectory>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:IdentityServiceUrl"] ?? "https://localhost:49586/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.Events = StudentCenter.Security.AccountAccessValidation.Events();
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,

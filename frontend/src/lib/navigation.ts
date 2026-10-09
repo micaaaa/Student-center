@@ -67,21 +67,13 @@ export function portalServices(user: User): PortalService[] {
 
     const services: PortalService[] = [
         {
-            id: 'students',
-            title: 'Students',
-            icon: ClipboardList,
-            description: 'Find a student by name or student number and open their record.',
-            links: [{ label: 'Find a student', to: '/staff/students' }],
-        },
-    ];
-    if (user.permissions.includes('ManageUsers'))
-        services.push({
             id: 'users',
             title: 'Users',
             icon: ClipboardList,
-            description: 'Manage accounts, roles and service permissions.',
-            links: [{ label: 'Manage users', to: '/staff/users' }],
-        });
+            description: 'Find student profiles and manage accounts where permitted.',
+            links: [{ label: 'View users', to: '/staff/users' }],
+        },
+    ];
     if (user.permissions.includes('ManageApplications')) {
         services.push({
             id: 'applications',

@@ -85,7 +85,17 @@ export function Layout() {
                         );
                         if (id === 'students' || id === 'users')
                             return (
-                                <NavLink key={id} to={links[0].to} onClick={() => setOpen(false)}>
+                                <NavLink
+                                    key={id}
+                                    to={links[0].to}
+                                    className={({ isActive }) =>
+                                        isActive ||
+                                        (id === 'users' && pathname.startsWith('/staff/students'))
+                                            ? 'active'
+                                            : undefined
+                                    }
+                                    onClick={() => setOpen(false)}
+                                >
                                     <Icon size={19} />
                                     {title}
                                 </NavLink>

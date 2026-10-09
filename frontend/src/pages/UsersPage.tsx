@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import { StudentsPage } from './StudentsPage';
 import { useAuth } from '../auth/AuthContext';
 import { useResource } from '../hooks/useResource';
 import { api, errorMessage } from '../lib/api';
@@ -18,6 +19,20 @@ const permissions = {
 };
 
 export function UsersPage() {
+    const { user } = useAuth();
+    return user?.permissions.includes('ManageUsers') ? <AccountList /> : <StudentsPage />;
+}
+
+interface StudentDirectoryEntry {
+    id: string;
+    userId: string;
+    firstName: string;
+    lastName: string;
+    studentNumber: string;
+}
+
+function AccountList() {
+    const profiles = useResource<StudentDirectoryEntry[]>('/api/students/directory');
     const resource = useResource<User[]>('/api/users');
     const [params, setParams] = useSearchParams();
     const query = params.get('search') || '';
@@ -41,7 +56,17 @@ export function UsersPage() {
             (user) =>
                 (!role || user.role === role) &&
                 (!status || user.status === status) &&
-                `${user.username} ${user.email}`.toLowerCase().includes(query.trim().toLowerCase()),
+                `${user.username} ${user.email} ${
+                    profiles.data
+                        ?.filter((profile) => profile.userId === user.id)
+                        .map(
+                            (profile) =>
+                                `${profile.firstName} ${profile.lastName} ${profile.studentNumber}`,
+                        )
+                        .join(' ') ?? ''
+                }`
+                    .toLowerCase()
+                    .includes(query.trim().toLowerCase()),
         ) || [];
     return (
         <>
@@ -50,9 +75,10 @@ export function UsersPage() {
                 <h1>Users</h1>
                 <p className="muted">Manage existing accounts and access to student services.</p>
             </div>
+            {profiles.error && <RequestError error={profiles.error} retry={profiles.reload} />}
             <div className="list-toolbar">
                 <label>
-                    Username or email
+                    Name, student number, username or email
                     <input
                         type="search"
                         value={query}
@@ -93,12 +119,34 @@ export function UsersPage() {
                         <article className="student-result" key={user.id}>
                             <div>
                                 <strong>{user.username}</strong>
+                                {profiles.data
+                                    ?.filter((profile) => profile.userId === user.id)
+                                    .map((profile) => (
+                                        <p key={profile.id}>
+                                            {profile.firstName} {profile.lastName} ·{' '}
+                                            {profile.studentNumber}
+                                        </p>
+                                    ))}
                                 <p>{user.email}</p>
                                 <p>
                                     {roleLabels[user.role]} ·{' '}
                                     {user.status === 'ACTIVE' ? 'Active' : 'Inactive'}
                                 </p>
                             </div>
+                            {user.role === 'STUDENT' &&
+                                profiles.data?.find((profile) => profile.userId === user.id) && (
+                                    <Link
+                                        className="text-link"
+                                        to={
+                                            '/staff/students/' +
+                                            profiles.data.find(
+                                                (profile) => profile.userId === user.id,
+                                            )!.id
+                                        }
+                                    >
+                                        View student profile
+                                    </Link>
+                                )}
                             <Link className="text-link" to={'/staff/users/' + user.id}>
                                 Manage account
                             </Link>
@@ -169,20 +217,36 @@ export function UserPage() {
     );
 }
 function UserEditor({ account, saved }: { account: User; saved: (user: User) => void }) {
+    const navigate = useNavigate();
+    const [confirmation, setConfirmation] = useState('');
+    const profiles = useResource<StudentDirectoryEntry[]>('/api/students/directory');
+    const student = profiles.data?.find((profile) => profile.userId === account.id);
     const { user } = useAuth();
     const own = user?.id === account.id;
     const [role, setRole] = useState<Role>(account.role);
     const [selected, setSelected] = useState(account.permissions);
     const [pending, setPending] = useState<
-        'role' | 'permissions' | 'activate' | 'deactivate' | null
+        'role' | 'permissions' | 'activate' | 'deactivate' | 'delete' | null
     >(null);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     async function confirm() {
         if (!pending || busy) return;
+        if (pending === 'delete' && confirmation !== account.username) {
+            setError('Enter the exact username to confirm deletion.');
+            return;
+        }
         setBusy(true);
         setError('');
         try {
+            if (pending === 'delete') {
+                await api('/api/users/' + account.id, {
+                    method: 'DELETE',
+                    body: JSON.stringify({ username: confirmation }),
+                });
+                navigate('/staff/users', { replace: true });
+                return;
+            }
             const result = await api<User>(`/api/users/${account.id}/${pending}`, {
                 method: 'PUT',
                 ...(pending === 'role'
@@ -207,6 +271,11 @@ function UserEditor({ account, saved }: { account: User; saved: (user: User) => 
                 <p>{account.email}</p>
                 <StatusBadge status={account.status} />
             </div>
+            {account.role === 'STUDENT' && student && (
+                <Link className="secondary" to={'/staff/students/' + student.id}>
+                    View student profile
+                </Link>
+            )}
             {own && (
                 <p className="notice">
                     This is your account. Another authorized administrator must change your access
@@ -289,8 +358,8 @@ function UserEditor({ account, saved }: { account: User; saved: (user: User) => 
             <section className="panel application-section">
                 <h2>Account status</h2>
                 <p>
-                    Inactive accounts cannot sign in or refresh their session. Existing access
-                    tokens in other services remain valid until they expire.
+                    Inactive accounts cannot sign in or access services. Role and permission changes
+                    apply to subsequent requests.
                 </p>
                 <button
                     className="secondary"
@@ -303,9 +372,29 @@ function UserEditor({ account, saved }: { account: User; saved: (user: User) => 
                     {account.status === 'ACTIVE' ? 'Deactivate account' : 'Activate account'}
                 </button>
             </section>
+            {user?.role === 'ADMIN' && !own && (
+                <section className="panel application-section">
+                    <h2>Delete account</h2>
+                    <p>
+                        Remove account access and personal profile details. Linked financial and
+                        service records are retained without the account holder's profile details.
+                    </p>
+                    <button
+                        className="secondary"
+                        disabled={busy}
+                        onClick={() => {
+                            setError('');
+                            setConfirmation('');
+                            setPending('delete');
+                        }}
+                    >
+                        Delete account
+                    </button>
+                </section>
+            )}
             {pending && (
                 <ConfirmationDialog
-                    title="Confirm account change"
+                    title={pending === 'delete' ? 'Delete account' : 'Confirm account change'}
                     busy={busy}
                     onClose={() => setPending(null)}
                     onConfirm={confirm}
@@ -314,14 +403,26 @@ function UserEditor({ account, saved }: { account: User; saved: (user: User) => 
                         {account.username} · {account.email}
                     </p>
                     <p>
-                        {pending === 'role'
-                            ? `Change role to ${roleLabels[role]}?`
-                            : pending === 'permissions'
-                              ? `Allow access to: ${selected.map((value) => permissions[value as keyof typeof permissions] || value).join(', ') || 'no staff services'}?`
-                              : pending === 'deactivate'
-                                ? 'Deactivate this account?'
-                                : 'Activate this account?'}
+                        {pending === 'delete'
+                            ? 'This cannot be undone. Open accommodation, charges and repair assignments remain for staff to resolve.'
+                            : pending === 'role'
+                              ? `Change role to ${roleLabels[role]}?`
+                              : pending === 'permissions'
+                                ? `Allow access to: ${selected.map((value) => permissions[value as keyof typeof permissions] || value).join(', ') || 'no staff services'}?`
+                                : pending === 'deactivate'
+                                  ? 'Deactivate this account?'
+                                  : 'Activate this account?'}
                     </p>
+                    {pending === 'delete' && (
+                        <label>
+                            Type {account.username} to confirm
+                            <input
+                                value={confirmation}
+                                onChange={(event) => setConfirmation(event.target.value)}
+                                autoComplete="off"
+                            />
+                        </label>
+                    )}
                     {error && (
                         <p className="notice error" role="alert">
                             {error}

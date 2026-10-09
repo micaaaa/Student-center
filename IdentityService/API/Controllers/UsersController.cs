@@ -11,7 +11,8 @@ namespace StudentCenter.IdentityService.API.Controllers;
 [ApiController]
 [Route("api/users")]
 [Authorize(Roles = "STAFF,ADMIN", Policy = "ManageUsers")]
-public sealed class UsersController(IUserManagementService userManagementService) : ControllerBase, IAsyncActionFilter
+public sealed class UsersController(IUserManagementService userManagementService,
+    Application.Services.AccountDeletionService deletion) : ControllerBase, IAsyncActionFilter
 {
     [NonAction]
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
@@ -29,7 +30,7 @@ public sealed class UsersController(IUserManagementService userManagementService
             context.Result = Forbid();
             return;
         }
-        if (HttpMethods.IsPut(context.HttpContext.Request.Method)
+        if ((HttpMethods.IsPut(context.HttpContext.Request.Method) || HttpMethods.IsDelete(context.HttpContext.Request.Method))
             && context.ActionArguments.TryGetValue("id", out var target) && target is Guid id && id == actorId)
         {
             context.Result = BadRequest(new { message = "You cannot change your own role, permissions or account status." });
@@ -37,6 +38,24 @@ public sealed class UsersController(IUserManagementService userManagementService
         }
         await next();
     }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "ADMIN")]
+    public async Task<IActionResult> Delete(Guid id, [FromBody] DeleteAccountRequest request, CancellationToken ct)
+    {
+        var actorId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var actor = await userManagementService.GetByIdAsync(actorId, ct);
+        if (actor.Role != "ADMIN") return Forbid();
+        try
+        {
+            await deletion.DeleteAsync(id, request.Username, ct);
+            return NoContent();
+        }
+        catch (NotFoundException exception) { return NotFound(new { message = exception.Message }); }
+        catch (ConflictException exception) { return Conflict(new { message = exception.Message }); }
+    }
+
+    public sealed record DeleteAccountRequest(string Username);
     [HttpGet]
     public Task<IReadOnlyCollection<UserResponse>> GetAll(CancellationToken cancellationToken) =>
         userManagementService.GetAllAsync(cancellationToken);

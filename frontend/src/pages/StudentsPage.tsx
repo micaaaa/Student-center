@@ -11,7 +11,7 @@ export function StudentsPage() {
         <>
             <div className="page-heading">
                 <span className="eyebrow">STUDENT RECORDS</span>
-                <h1>Students</h1>
+                <h1>Users</h1>
                 <p className="muted">
                     Find a student by name or student number and open their record. Only students
                     who have created a profile appear here.

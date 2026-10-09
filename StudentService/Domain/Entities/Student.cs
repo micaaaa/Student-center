@@ -35,6 +35,20 @@ public sealed class Student
     public string? Address { get; private set; }
     public StudentStatus Status { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
+    public bool IsDeleted { get; private set; }
+
+    public void Anonymize()
+    {
+        StudentNumber = "DELETED-" + Id.ToString("N")[..22];
+        FirstName = "Deleted";
+        LastName = "user";
+        Email = Id.ToString("N") + "@deleted.invalid";
+        Phone = Faculty = StudyProgram = StudyLevel = Address = null;
+        YearOfStudy = null;
+        FundingType = null;
+        Status = StudentStatus.Inactive;
+        IsDeleted = true;
+    }
 
     public void UpdateProfile(
         string firstName,

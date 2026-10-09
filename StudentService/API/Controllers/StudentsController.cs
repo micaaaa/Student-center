@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using StudentCenter.StudentService.Application.DTOs;
 using StudentCenter.StudentService.Application.Exceptions;
 using StudentCenter.StudentService.Application.Interfaces;
@@ -10,8 +11,27 @@ namespace StudentCenter.StudentService.API.Controllers;
 [ApiController]
 [Route("api/students")]
 [Authorize]
-public sealed class StudentsController(IStudentService studentService) : ControllerBase
+public sealed class StudentsController(IStudentService studentService,
+    Infrastructure.Persistence.StudentDbContext db,
+    Infrastructure.ExternalServices.StudentAccountDirectory accounts) : ControllerBase
 {
+    [HttpGet("directory")]
+    [Authorize(Roles = "STAFF,ADMIN")]
+    public async Task<IActionResult> Directory(CancellationToken ct)
+    {
+        try
+        {
+            var ids = await accounts.GetStudentAccountsAsync(ct);
+            return Ok(await db.Students.AsNoTracking()
+                .Where(student => !student.IsDeleted && ids.Contains(student.UserId))
+                .Select(student => new { student.Id, student.UserId, student.FirstName, student.LastName, student.StudentNumber })
+                .ToArrayAsync(ct));
+        }
+        catch (Exception exception) when (exception is HttpRequestException || exception is TaskCanceledException && !ct.IsCancellationRequested)
+        {
+            return StatusCode(503, new { message = "Account directory is temporarily unavailable." });
+        }
+    }
     [HttpGet]
     [Authorize(Roles = "STAFF,ADMIN")]
     public async Task<ActionResult<StudentSearchResponse>> Search(
@@ -23,7 +43,15 @@ public sealed class StudentsController(IStudentService studentService) : Control
         if (page < 1 || page > 100000 || pageSize < 1 || pageSize > 100 || search?.Length > 150)
             return BadRequest(new { message = "Invalid student search parameters." });
 
-        return Ok(await studentService.SearchAsync(search, page, pageSize, cancellationToken));
+        try
+        {
+            return Ok(await studentService.SearchAsync(search, page, pageSize, cancellationToken));
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            || exception is TaskCanceledException && !cancellationToken.IsCancellationRequested)
+        {
+            return StatusCode(503, new { message = "Account directory is temporarily unavailable." });
+        }
     }
     [HttpPost("me")]
     [Authorize(Roles = "STUDENT")]
