@@ -12,7 +12,7 @@ public sealed class MealUsageService(
         CreateMealEntitlementRequest request, Guid actorId, CancellationToken ct)
     {
         var entitlement = new MealEntitlement(request.StudentId, request.AcademicYear,
-            request.Year, request.Month, request.MealType, request.AllowedQuantity, actorId, clock.GetUtcNow());
+            request.Year, request.Month, request.MealType, actorId, clock.GetUtcNow());
         await students.EnsureActiveStudentAsync(request.StudentId, ct);
 
         return await repository.InTransactionAsync(async token =>
@@ -35,7 +35,7 @@ public sealed class MealUsageService(
         return repository.InTransactionAsync(async token =>
         {
             var entitlement = await FindEntitlementAsync(id, token);
-            entitlement.Update(request.AllowedQuantity, request.Status, actorId, clock.GetUtcNow());
+            entitlement.Update(request.Status, actorId, clock.GetUtcNow());
             await repository.SaveAsync(token);
             return ToResponse(entitlement);
         }, ct);

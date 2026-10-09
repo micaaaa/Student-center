@@ -35,12 +35,12 @@ public sealed class MealUsageTests
     {
         var entitlement = Entitlement(2);
         var restaurant = new Restaurant("Restaurant", "Address");
-        entitlement.Update(2, MealEntitlementStatus.Suspended, Actor, Now);
+        entitlement.Update(MealEntitlementStatus.Suspended, Actor, Now);
 
         Assert.Throws<FoodConflictException>(() =>
             entitlement.Consume(Guid.NewGuid(), restaurant, Actor, null, Now));
 
-        entitlement.Update(2, MealEntitlementStatus.Active, Actor, Now);
+        entitlement.Update(MealEntitlementStatus.Active, Actor, Now);
         entitlement.Consume(Guid.NewGuid(), restaurant, Actor, null, Now);
         Assert.That(entitlement.RemainingQuantity, Is.EqualTo(1));
     }
@@ -58,7 +58,7 @@ public sealed class MealUsageTests
         Assert.Throws<FoodConflictException>(() =>
             entitlement.Consume(Guid.NewGuid(), restaurant, Actor, null, expiry));
         Assert.Throws<FoodConflictException>(() =>
-            entitlement.Update(3, MealEntitlementStatus.Active, Actor, expiry));
+            entitlement.Update(MealEntitlementStatus.Active, Actor, expiry));
     }
 
     [Test]
@@ -69,7 +69,7 @@ public sealed class MealUsageTests
         var request = Request(repository);
 
         var first = await service.ConsumeAsync(request, Actor, default);
-        repository.Entitlement.Update(2, MealEntitlementStatus.Suspended, Actor, Now);
+        repository.Entitlement.Update(MealEntitlementStatus.Suspended, Actor, Now);
         var replay = await service.ConsumeAsync(request, Actor, default);
 
         Assert.That(first.IsReplay, Is.False);
@@ -113,7 +113,9 @@ public sealed class MealUsageTests
 
     private static MealEntitlement Entitlement(int quantity)
     {
-        return new MealEntitlement(Guid.NewGuid(), "2026/2027", 2026, 10, MealType.Lunch, quantity, Actor, Now);
+        var entitlement = new MealEntitlement(Guid.NewGuid(), "2026/2027", 2026, 10, MealType.Lunch, Actor, Now);
+        entitlement.Purchase(Guid.NewGuid(), quantity, 100, Actor, Now);
+        return entitlement;
     }
 
     private static MealUsageService Service(MemoryRepository repository)

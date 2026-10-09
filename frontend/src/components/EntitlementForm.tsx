@@ -23,7 +23,6 @@ export function EntitlementForm({
         item?.academicYear || `${month >= 10 ? year : year - 1}/${month >= 10 ? year + 1 : year}`,
     );
     const [type, setType] = useState(item?.mealType || 1);
-    const [quantity, setQuantity] = useState(String(item?.allowedQuantity || ''));
     const [status, setStatus] = useState(item?.status || 1);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
@@ -32,17 +31,14 @@ export function EntitlementForm({
         if (busy) return;
         const years = academicYear.split('/').map(Number);
         if (
-            (!item &&
-                (!/^\d{4}\/\d{4}$/.test(academicYear) ||
-                    years[0] < 1 ||
-                    years[1] !== years[0] + 1 ||
-                    !years.includes(year))) ||
-            !Number.isInteger(Number(quantity)) ||
-            Number(quantity) < Math.max(1, item?.consumedQuantity || 0) ||
-            Number(quantity) > 2147483647
+            !item &&
+            (!/^\d{4}\/\d{4}$/.test(academicYear) ||
+                years[0] < 1 ||
+                years[1] !== years[0] + 1 ||
+                !years.includes(year))
         ) {
             setError(
-                'Check the academic year and allowed quantity. The academic year must contain consecutive years and include the selected calendar year.',
+                'The academic year must contain consecutive years and include the selected calendar year.',
             );
             return;
         }
@@ -53,14 +49,13 @@ export function EntitlementForm({
                 method: item ? 'PUT' : 'POST',
                 body: JSON.stringify(
                     item
-                        ? { allowedQuantity: Number(quantity), status }
+                        ? { status }
                         : {
                               studentId,
                               academicYear,
                               year,
                               month,
                               mealType: type,
-                              allowedQuantity: Number(quantity),
                           },
                 ),
             });
@@ -106,18 +101,6 @@ export function EntitlementForm({
                                 ))}
                             </select>
                         </label>
-                        <label>
-                            Allowed quantity
-                            <input
-                                required
-                                type="number"
-                                min={Math.max(1, item?.consumedQuantity || 0)}
-                                max="2147483647"
-                                step="1"
-                                value={quantity}
-                                onChange={(e) => setQuantity(e.target.value)}
-                            />
-                        </label>
                         {item && (
                             <label>
                                 Status
@@ -132,8 +115,8 @@ export function EntitlementForm({
                         )}
                     </div>
                     <p className="muted">
-                        This sets the total entitlement quantity. Use Record paid purchase to add
-                        purchased meals with a payment record.
+                        New entitlements start with zero meals. Use Record paid purchase to add paid
+                        meals. Changing the status does not change the meal balance.
                     </p>
                     <div className="button-row">
                         <button className="primary">Save entitlement</button>

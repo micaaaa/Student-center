@@ -41,7 +41,9 @@ export function CompetitionPage() {
         return (
             <section className="panel">
                 <h1>Competition unavailable</h1>
-                <Link to="/competitions">Return to competitions</Link>
+                <Link className="secondary" to="/competitions">
+                    Return to competitions
+                </Link>
             </section>
         );
     return (

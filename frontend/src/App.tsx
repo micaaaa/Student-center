@@ -212,7 +212,9 @@ export default function App() {
                                 element={
                                     <div className="panel">
                                         <h1>Access denied</h1>
-                                        <Link to="/">Return to overview</Link>
+                                        <Link className="secondary" to="/">
+                                            Return to overview
+                                        </Link>
                                     </div>
                                 }
                             />
@@ -223,7 +225,9 @@ export default function App() {
                         element={
                             <div className="screen-state">
                                 <h1>Page not found</h1>
-                                <Link to="/">Return to home</Link>
+                                <Link className="secondary" to="/">
+                                    Return to home
+                                </Link>
                             </div>
                         }
                     />

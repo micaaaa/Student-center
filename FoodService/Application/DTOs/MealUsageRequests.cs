@@ -15,16 +15,10 @@ public sealed class CreateMealEntitlementRequest
 
     [EnumDataType(typeof(MealType))]
     public MealType MealType { get; set; }
-
-    [Range(1, int.MaxValue)]
-    public int AllowedQuantity { get; set; }
 }
 
 public sealed class UpdateMealEntitlementRequest
 {
-    [Range(1, int.MaxValue)]
-    public int AllowedQuantity { get; set; }
-
     [EnumDataType(typeof(MealEntitlementStatus))]
     public MealEntitlementStatus Status { get; set; }
 }

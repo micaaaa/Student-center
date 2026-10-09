@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router';
 import { useResource } from '../hooks/useResource';
 import type { Charge } from '../lib/billing';
-import { money, chargeTypes } from '../lib/billing';
+import { money, chargeTypeLabels } from '../lib/billing';
 import { dateTime } from '../lib/applications';
 import { RequestError, StatusBadge } from '../components/ApplicationUi';
 import { BillingForm, billingStorageKey } from '../components/BillingForm';
@@ -43,7 +43,7 @@ function ChargeRecord({
         <>
             <div className="page-heading heading-row">
                 <div>
-                    <h1>{chargeTypes[item.type] || 'Charge'}</h1>
+                    <h1>{chargeTypeLabels[item.type] || 'Charge'}</h1>
                     <StatusBadge status={item.status} />
                 </div>
                 <button className="secondary" disabled={paying} onClick={reload}>

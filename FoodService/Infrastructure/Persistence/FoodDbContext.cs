@@ -69,7 +69,7 @@ public sealed class FoodDbContext(DbContextOptions<FoodDbContext> options) : DbC
         entitlements.ToTable(table =>
         {
             table.HasCheckConstraint("CK_MealEntitlements_Quantities",
-                "[AllowedQuantity] > 0 AND [ConsumedQuantity] >= 0 AND [ConsumedQuantity] <= [AllowedQuantity]");
+                "[AllowedQuantity] >= 0 AND [ConsumedQuantity] >= 0 AND [ConsumedQuantity] <= [AllowedQuantity]");
             table.HasCheckConstraint("CK_MealEntitlements_Period",
                 "[Year] BETWEEN 1 AND 9998 AND [Month] BETWEEN 1 AND 12");
         });

@@ -111,7 +111,7 @@ export function AuthPage({ register = false }: { register?: boolean }) {
             <section className="auth-panel">
                 <div className="auth-switch">
                     {register ? 'Already registered?' : 'New user?'}{' '}
-                    <Link to={register ? '/login' : '/register'}>
+                    <Link className="secondary" to={register ? '/login' : '/register'}>
                         {register ? 'Sign in' : 'Create account'} <ArrowRight size={15} />
                     </Link>
                 </div>

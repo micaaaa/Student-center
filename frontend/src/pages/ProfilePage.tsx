@@ -106,14 +106,16 @@ export function ProfilePage() {
     const formVisible = !profile || editing;
 
     return (
-        <>
+        <div
+            className={`profile-page${formVisible ? ' profile-editing' : ''}${completing ? ' profile-completing' : ''}`}
+        >
             <div className="page-heading heading-row">
                 <div>
                     <span className="eyebrow">STUDENT RECORD</span>
                     <h1>{completing ? 'Complete your profile' : 'My profile'}</h1>
                     <p className="muted">
                         {completing
-                            ? 'Your account and student record are ready. Add your academic and contact details below.'
+                            ? 'Add your faculty and study details, then save your profile.'
                             : 'Personal information and academic details.'}
                     </p>
                 </div>
@@ -138,79 +140,87 @@ export function ProfilePage() {
             )}
             <div className="profile-layout">
                 <section className="panel profile-panel">
-                    <div className="panel-title">
-                        <span className="tile-icon">
-                            <UserRound />
-                        </span>
-                        <div>
-                            <h2>{profile ? 'Personal information' : 'Create student profile'}</h2>
-                            <p className="muted">
-                                {profile
-                                    ? 'Personal and academic information.'
-                                    : 'Enter the required information to create your student record.'}
-                            </p>
+                    {!formVisible && (
+                        <div className="panel-title">
+                            <span className="tile-icon">
+                                <UserRound />
+                            </span>
+                            <div>
+                                <h2>
+                                    {profile ? 'Personal information' : 'Create student profile'}
+                                </h2>
+                                <p className="muted">
+                                    {profile
+                                        ? 'Personal and academic information.'
+                                        : 'Enter the required information to create your student record.'}
+                                </p>
+                            </div>
                         </div>
-                    </div>
+                    )}
                     {formVisible ? (
                         <form onSubmit={save} key={profile?.id ?? 'new'}>
                             <fieldset disabled={busy}>
-                                <div className="form-grid">
-                                    <label>
-                                        Student number {!profile && '*'}
-                                        <input
-                                            name="studentNumber"
-                                            required
-                                            maxLength={30}
-                                            defaultValue={profile?.studentNumber}
-                                            readOnly={!!profile}
-                                            placeholder="e.g. RA 123/2026"
-                                        />
-                                    </label>
-                                    <div className="form-hint">
-                                        {profile
-                                            ? 'The student number cannot be changed through this form.'
-                                            : '* Required fields'}
+                                <div className="profile-form-sections">
+                                    <div className="form-grid profile-personal-fields">
+                                        <h2 className="span-two">Personal information</h2>
+                                        <label>
+                                            Student number {!profile && '*'}
+                                            <input
+                                                name="studentNumber"
+                                                required
+                                                maxLength={30}
+                                                defaultValue={profile?.studentNumber}
+                                                readOnly={!!profile}
+                                                placeholder="e.g. RA 123/2026"
+                                            />
+                                        </label>
+                                        <div className="form-hint">
+                                            {profile
+                                                ? 'The student number cannot be changed through this form.'
+                                                : '* Required fields'}
+                                        </div>
+                                        <label>
+                                            First name *
+                                            <input
+                                                name="firstName"
+                                                required
+                                                maxLength={100}
+                                                autoComplete="given-name"
+                                                defaultValue={profile?.firstName}
+                                            />
+                                        </label>
+                                        <label>
+                                            Last name *
+                                            <input
+                                                name="lastName"
+                                                required
+                                                maxLength={100}
+                                                autoComplete="family-name"
+                                                defaultValue={profile?.lastName}
+                                            />
+                                        </label>
+                                        <label className="span-two">
+                                            Contact email *
+                                            <input
+                                                name="email"
+                                                type="email"
+                                                required
+                                                maxLength={256}
+                                                autoComplete="email"
+                                                defaultValue={profile?.email ?? user?.email}
+                                            />
+                                            <small>
+                                                Changing the contact email does not change your
+                                                sign-in email.
+                                            </small>
+                                        </label>
                                     </div>
-                                    <label>
-                                        First name *
-                                        <input
-                                            name="firstName"
-                                            required
-                                            maxLength={100}
-                                            autoComplete="given-name"
-                                            defaultValue={profile?.firstName}
-                                        />
-                                    </label>
-                                    <label>
-                                        Last name *
-                                        <input
-                                            name="lastName"
-                                            required
-                                            maxLength={100}
-                                            autoComplete="family-name"
-                                            defaultValue={profile?.lastName}
-                                        />
-                                    </label>
-                                    <label className="span-two">
-                                        Contact email *
-                                        <input
-                                            name="email"
-                                            type="email"
-                                            required
-                                            maxLength={256}
-                                            autoComplete="email"
-                                            defaultValue={profile?.email ?? user?.email}
-                                        />
-                                        <small>
-                                            Changing the contact email does not change your sign-in
-                                            email.
-                                        </small>
-                                    </label>
-                                    <>
+                                    <div className="form-grid profile-academic-fields">
                                         <div className="form-divider span-two">
-                                            <h3>Academic and contact information</h3>
+                                            <h2>Academic and contact details</h2>
                                             <p className="muted">
-                                                These details are optional and can be updated later.
+                                                Add your study details here. These fields can also
+                                                be updated later.
                                             </p>
                                         </div>
                                         <label className="span-two">
@@ -260,7 +270,7 @@ export function ProfilePage() {
                                                 <option value="SELFFINANCED">Self-funded</option>
                                             </select>
                                         </label>
-                                        <label className="span-two">
+                                        <label>
                                             Phone
                                             <input
                                                 name="phone"
@@ -270,7 +280,7 @@ export function ProfilePage() {
                                                 defaultValue={profile?.phone ?? ''}
                                             />
                                         </label>
-                                        <label className="span-two">
+                                        <label>
                                             Address
                                             <input
                                                 name="address"
@@ -279,7 +289,7 @@ export function ProfilePage() {
                                                 defaultValue={profile?.address ?? ''}
                                             />
                                         </label>
-                                    </>
+                                    </div>
                                 </div>
                                 {error && (
                                     <div className="notice error" role="alert">
@@ -305,7 +315,9 @@ export function ProfilePage() {
                                         {busy
                                             ? 'Saving…'
                                             : profile
-                                              ? 'Save changes'
+                                              ? completing
+                                                  ? 'Save profile'
+                                                  : 'Save changes'
                                               : 'Create profile'}
                                     </button>
                                 </div>
@@ -358,6 +370,6 @@ export function ProfilePage() {
                     </div>
                 </aside>
             </div>
-        </>
+        </div>
     );
 }

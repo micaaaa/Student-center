@@ -1,9 +1,16 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { api, ApiError, errorMessage, getSession } from '../lib/api';
-import { chargeTypes, paymentMethods, money, pendingBillingKey } from '../lib/billing';
+import {
+    chargeTypes,
+    paymentMethods,
+    paymentMethodValues,
+    money,
+    pendingBillingKey,
+} from '../lib/billing';
 import type { Charge } from '../lib/billing';
 import { ConfirmationDialog } from './ConfirmationDialog';
+import { BillingAccommodationPicker } from './BillingAccommodationPicker';
 
 interface WriteBody {
     requestId: string;
@@ -79,9 +86,7 @@ export function BillingForm({
                     (!/^\d{4}-\d{2}$/.test(period) ||
                         !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(reference.trim()))))
         ) {
-            setError(
-                'Complete the charge details. Accommodation requires an accommodation reference and billing month.',
-            );
+            setError('Complete the charge details. Select accommodation and a billing month.');
             return;
         }
         if (charge && method !== 1 && !reference.trim()) {
@@ -124,7 +129,13 @@ export function BillingForm({
         try {
             await api('/api/billing/' + (charge ? 'payments' : 'charges'), {
                 method: 'POST',
-                body: JSON.stringify(body),
+                body: JSON.stringify({
+                    ...body,
+                    ...(body.type !== undefined ? { type: chargeTypes[body.type] } : {}),
+                    ...(body.method !== undefined
+                        ? { method: paymentMethodValues[body.method - 1] }
+                        : {}),
+                }),
             });
             sessionStorage.removeItem(key);
             setPending(null);
@@ -258,14 +269,11 @@ export function BillingForm({
                                     </label>
                                     {type === 1 && (
                                         <>
-                                            <label>
-                                                Accommodation reference
-                                                <input
-                                                    required
-                                                    value={reference}
-                                                    onChange={(e) => setReference(e.target.value)}
-                                                />
-                                            </label>
+                                            <BillingAccommodationPicker
+                                                studentId={studentId}
+                                                value={reference}
+                                                onChange={setReference}
+                                            />
                                             <label>
                                                 Billing month
                                                 <input
@@ -297,7 +305,10 @@ export function BillingForm({
                         </>
                     )}
                     <div className="button-row application-section">
-                        <button className="primary">
+                        <button
+                            className="primary"
+                            disabled={!pending && !charge && type === 1 && !reference}
+                        >
                             {pending
                                 ? 'Retry pending request'
                                 : charge

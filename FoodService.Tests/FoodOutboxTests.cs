@@ -39,7 +39,7 @@ public sealed class FoodOutboxTests
     {
         var now = DateTimeOffset.UtcNow;
         var entitlement = new MealEntitlement(Guid.NewGuid(), $"{now.Year}/{now.Year + 1}",
-            now.Year, now.Month, StudentCenter.FoodService.Domain.Enums.MealType.Lunch, 1, Guid.NewGuid(), now);
+            now.Year, now.Month, StudentCenter.FoodService.Domain.Enums.MealType.Lunch, Guid.NewGuid(), now);
         return FoodOutboxMessage.From(entitlement.Purchase(Guid.NewGuid(), 3, 120.25m, Guid.NewGuid(), now));
     }
 

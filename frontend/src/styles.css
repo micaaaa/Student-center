@@ -765,6 +765,59 @@ label small {
     align-items: center;
     gap: 20px;
 }
+.profile-editing .page-heading {
+    margin-bottom: 16px;
+}
+.profile-editing .profile-layout {
+    grid-template-columns: minmax(0, 1fr);
+}
+.profile-editing .profile-aside {
+    display: none;
+}
+.profile-editing .profile-panel {
+    padding: 20px;
+}
+.profile-form-sections {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+}
+.profile-form-sections .form-grid {
+    gap: 0 14px;
+}
+.profile-form-sections h2 {
+    font-size: 17px;
+    margin: 0 0 12px;
+}
+.profile-form-sections .form-divider {
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+.profile-form-sections .form-divider p {
+    margin: 0 0 12px;
+}
+.profile-form-sections label {
+    margin-bottom: 12px;
+}
+.profile-form-sections input,
+.profile-form-sections select {
+    padding: 9px 11px;
+    min-height: 40px;
+}
+.profile-editing .form-actions {
+    padding-top: 12px;
+}
+.profile-completing .profile-academic-fields {
+    order: -1;
+}
+@media (max-width: 900px) {
+    .profile-form-sections {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 20px;
+    }
+}
 .profile-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 235px;
@@ -1089,12 +1142,29 @@ label small {
     margin-bottom: 24px;
 }
 .text-link {
-    display: inline-block;
-    margin-top: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 14px;
+    min-height: 40px;
+    border: 1px solid #d9e1d8;
+    border-radius: 7px;
+    background: white;
+    margin-top: 0;
     font-size: 13px;
-    color: #456747;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    font-weight: 600;
+    line-height: 1.5;
+    text-align: center;
+    color: var(--green);
+    text-decoration: none;
+    cursor: pointer;
+}
+.text-link:hover {
+    background: #edf2e9;
+}
+.application-summary > .text-link {
+    margin-top: 24px;
 }
 .list-toolbar {
     display: flex;
@@ -1531,7 +1601,7 @@ input[type='file'] {
     font-size: 14px;
 }
 .service-actions a:hover {
-    text-decoration: underline;
+    text-decoration: none;
 }
 .home-profile {
     display: flex;
@@ -1708,4 +1778,124 @@ input[type='file'] {
     font-weight: 600;
     color: var(--green);
     overflow-wrap: anywhere;
+}
+
+.home-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.home-heading h1 {
+    font-size: 30px;
+    margin-bottom: 6px;
+}
+.home-heading p {
+    margin: 0;
+    font-size: 13px;
+}
+.home-heading .secondary {
+    padding: 9px 12px;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+.home-page .home-profile {
+    padding: 12px 16px;
+    gap: 12px;
+    margin-bottom: 16px;
+    background: #edf2e9;
+    font-size: 13px;
+}
+.home-page .home-profile p {
+    margin-top: 2px;
+    font-size: 12px;
+}
+.home-page .service-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 0;
+}
+.home-page .service-card {
+    padding: 18px;
+    border-radius: 10px;
+    min-width: 0;
+}
+.service-card-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.service-icon-wrap {
+    display: inline-flex;
+    padding: 8px;
+    border-radius: 8px;
+    background: #f0f4ed;
+}
+.service-card-heading .service-icon {
+    margin: 0;
+}
+.service-card-heading h2 {
+    margin: 0;
+    font-size: 17px;
+}
+.home-page .service-card p {
+    font-size: 12px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+.home-page .service-summary {
+    padding: 10px 12px;
+    margin-bottom: 14px;
+}
+.home-page .service-summary p:last-child {
+    margin-bottom: 0;
+}
+.home-page .service-summary strong,
+.home-page .meal-summary {
+    font-size: 13px;
+}
+.home-page .overview-metrics {
+    gap: 10px;
+}
+.home-page .overview-metrics dt {
+    font-size: 11px;
+}
+.home-page .overview-metrics dd {
+    font-size: 18px;
+    margin-top: 4px;
+}
+.home-page .service-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+}
+.home-page .service-actions a {
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 9px 12px;
+    min-height: 40px;
+    max-width: 100%;
+    text-align: center;
+}
+@media (max-width: 1100px) {
+    .home-page .service-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 600px) {
+    .home-page .service-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .home-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+    .home-heading h1 {
+        font-size: 26px;
+    }
 }

@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router';
 import { useResource } from '../hooks/useResource';
 import type { Student } from '../lib/types';
 import type { Charge, Balance } from '../lib/billing';
-import { money, chargeTypes } from '../lib/billing';
+import { money, chargeTypeLabels } from '../lib/billing';
 import { RequestError, StatusBadge } from '../components/ApplicationUi';
 import { BillingForm } from '../components/BillingForm';
 import { BillingPayments } from '../components/BillingPayments';
@@ -163,7 +163,7 @@ function BillingRecords({ studentId }: { studentId?: string }) {
                     {charges.data.map((item) => (
                         <article className="panel" key={item.id}>
                             <StatusBadge status={item.status} />
-                            <h2>{chargeTypes[item.type] || 'Charge'}</h2>
+                            <h2>{chargeTypeLabels[item.type] || 'Charge'}</h2>
                             <p className="preserve-lines">{item.description}</p>
                             <p>Due: {item.dueDate}</p>
                             <p>

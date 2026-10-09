@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useResource } from '../hooks/useResource';
 import type { Payment } from '../lib/billing';
-import { money, paymentMethods } from '../lib/billing';
+import { money, paymentMethodLabels } from '../lib/billing';
 import { dateTime } from '../lib/applications';
 import { RequestError } from './ApplicationUi';
 export function BillingPayments({ path, chargeId }: { path: string; chargeId?: string }) {
@@ -40,7 +40,7 @@ export function BillingPayments({ path, chargeId }: { path: string; chargeId?: s
                                 <tr key={item.id}>
                                     <td>{dateTime(item.paymentDateUtc)}</td>
                                     <td>{money(item.amount)}</td>
-                                    <td>{paymentMethods[item.method - 1]}</td>
+                                    <td>{paymentMethodLabels[item.method]}</td>
                                     <td className="record-reference">
                                         {item.referenceNumber || '—'}
                                     </td>

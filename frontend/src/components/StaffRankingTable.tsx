@@ -45,7 +45,10 @@ export function StaffRankingTable({
                             <tr key={entry.applicationId}>
                                 <td>{entry.position}</td>
                                 <td className="record-reference">
-                                    <Link to={'/staff/applications/' + entry.applicationId}>
+                                    <Link
+                                        className="secondary"
+                                        to={'/staff/applications/' + entry.applicationId}
+                                    >
                                         {entry.applicationId}
                                     </Link>
                                 </td>

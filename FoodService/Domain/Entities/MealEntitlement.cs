@@ -11,7 +11,7 @@ public sealed class MealEntitlement
     }
 
     public MealEntitlement(Guid studentId, string academicYear, int year, int month,
-        MealType mealType, int allowedQuantity, Guid actorId, DateTimeOffset now)
+        MealType mealType, Guid actorId, DateTimeOffset now)
     {
         if (studentId == Guid.Empty || actorId == Guid.Empty)
         {
@@ -45,7 +45,7 @@ public sealed class MealEntitlement
         MealType = mealType;
         CreatedByUserId = actorId;
         CreatedAtUtc = now.UtcDateTime;
-        Update(allowedQuantity, MealEntitlementStatus.Active, actorId, now);
+        Update(MealEntitlementStatus.Active, actorId, now);
     }
 
     public Guid Id { get; private set; }
@@ -71,13 +71,8 @@ public sealed class MealEntitlement
             : Status;
     }
 
-    public void Update(int allowedQuantity, MealEntitlementStatus status, Guid actorId, DateTimeOffset now)
+    public void Update(MealEntitlementStatus status, Guid actorId, DateTimeOffset now)
     {
-        if (allowedQuantity < 1 || allowedQuantity < ConsumedQuantity)
-        {
-            throw new ArgumentException("Allowed quantity must be positive and cannot be below the consumed quantity.");
-        }
-
         if (status is not (MealEntitlementStatus.Active or MealEntitlementStatus.Suspended))
         {
             throw new ArgumentException("Only Active or Suspended can be assigned; expiration is automatic.");
@@ -93,7 +88,6 @@ public sealed class MealEntitlement
             throw new FoodConflictException("Expired meal entitlement cannot be changed.");
         }
 
-        AllowedQuantity = allowedQuantity;
         Status = status;
         UpdatedByUserId = actorId;
         UpdatedAtUtc = now.UtcDateTime;

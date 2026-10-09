@@ -29,7 +29,7 @@ export function StaffAppealCard({
             <StatusBadge status={appeal.status} />
             <p className="record-reference">
                 Application:{' '}
-                <Link to={'/staff/applications/' + appeal.applicationId}>
+                <Link className="secondary" to={'/staff/applications/' + appeal.applicationId}>
                     {appeal.applicationId}
                 </Link>
             </p>

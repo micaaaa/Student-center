@@ -85,6 +85,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy("ManageBilling", policy => policy
+        .RequireAuthenticatedUser()
+        .RequireRole("STAFF", "ADMIN")
+        .RequireClaim("permission", "ManageBilling"));
     options.AddPolicy("ManageAccommodation", policy => policy
         .RequireAuthenticatedUser()
         .RequireRole("STAFF", "ADMIN")

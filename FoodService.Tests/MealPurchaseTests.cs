@@ -14,6 +14,29 @@ public sealed class MealPurchaseTests
     private static readonly Guid Actor = Guid.NewGuid();
 
     [Test]
+    public void NewEntitlementRequiresPurchaseBeforeConsumptionAndStatusChangesPreserveBalance()
+    {
+        var entitlement = new MealEntitlement(Guid.NewGuid(), "2026/2027", 2026, 10,
+            MealType.Lunch, Actor, Now);
+        var restaurant = new Restaurant("Restaurant", "Address");
+
+        Assert.That(entitlement.AllowedQuantity, Is.Zero);
+        Assert.Throws<FoodConflictException>(() =>
+            entitlement.Consume(Guid.NewGuid(), restaurant, Actor, null, Now));
+
+        entitlement.Update(MealEntitlementStatus.Suspended, Actor, Now);
+        entitlement.Update(MealEntitlementStatus.Active, Actor, Now);
+        Assert.That(entitlement.RemainingQuantity, Is.Zero);
+
+        entitlement.Purchase(Guid.NewGuid(), 3, 100, Actor, Now);
+        entitlement.Consume(Guid.NewGuid(), restaurant, Actor, null, Now);
+        entitlement.Update(MealEntitlementStatus.Suspended, Actor, Now);
+        entitlement.Update(MealEntitlementStatus.Active, Actor, Now);
+        Assert.That(entitlement.AllowedQuantity, Is.EqualTo(3));
+        Assert.That(entitlement.RemainingQuantity, Is.EqualTo(2));
+    }
+
+    [Test]
     public void PurchaseAddsQuantityAndPreservesConsumedCount()
     {
         var entitlement = Entitlement();
@@ -39,10 +62,10 @@ public sealed class MealPurchaseTests
     public void SuspendedAndExpiredEntitlementsCannotBeToppedUp()
     {
         var entitlement = Entitlement();
-        entitlement.Update(2, MealEntitlementStatus.Suspended, Actor, Now);
+        entitlement.Update(MealEntitlementStatus.Suspended, Actor, Now);
         Assert.Throws<FoodConflictException>(() => entitlement.Purchase(Guid.NewGuid(), 1, 100, Actor, Now));
 
-        entitlement.Update(2, MealEntitlementStatus.Active, Actor, Now);
+        entitlement.Update(MealEntitlementStatus.Active, Actor, Now);
         Assert.Throws<FoodConflictException>(() =>
             entitlement.Purchase(Guid.NewGuid(), 1, 100, Actor, new DateTimeOffset(2026, 11, 1, 0, 0, 0, TimeSpan.Zero)));
         Assert.That(entitlement.AllowedQuantity, Is.EqualTo(2));
@@ -55,7 +78,7 @@ public sealed class MealPurchaseTests
         var service = Service(repository);
         var request = Request(repository);
         var first = await service.PurchaseAsync(request, Actor, default);
-        repository.Entitlement.Update(5, MealEntitlementStatus.Suspended, Actor, Now);
+        repository.Entitlement.Update(MealEntitlementStatus.Suspended, Actor, Now);
 
         var replay = await service.PurchaseAsync(request, Actor, default);
 
@@ -88,7 +111,9 @@ public sealed class MealPurchaseTests
 
     private static MealEntitlement Entitlement()
     {
-        return new MealEntitlement(Guid.NewGuid(), "2026/2027", 2026, 10, MealType.Lunch, 2, Actor, Now);
+        var entitlement = new MealEntitlement(Guid.NewGuid(), "2026/2027", 2026, 10, MealType.Lunch, Actor, Now);
+        entitlement.Purchase(Guid.NewGuid(), 2, 100, Actor, Now);
+        return entitlement;
     }
 
     private static MealPurchaseRequest Request(MemoryRepository repository)
